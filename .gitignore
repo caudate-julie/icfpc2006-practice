@@ -1,0 +1,12 @@
+*.exp
+*.lib
+*.obj
+*.pyd
+__pycache__/
+# practice*
+*.umz
+temp.py
+# !one_out.umz
+# /*.in
+# /*.out
+# /bot.log
