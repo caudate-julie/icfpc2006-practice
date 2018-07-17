@@ -1,4 +1,4 @@
-// cl /EHsc /LD um.cpp C:\Python36\libs\python36.lib /Feum.pyd /I C:\Python36\include
+// cl /EHsc /LD um_emulator.cpp C:\Python36\libs\python36.lib /Feum_emulator.pyd /I C:\Python36\include
 
 #include <pybind11/stl.h>
 #include <pybind11/pybind11.h>
@@ -12,7 +12,7 @@ using std::string;
 
 typedef uint32_t uint32;
 
-class UM {
+class UMEmulator {
 
 	/**-----------------------------------------------------
 	  ----------------------------------------------------*/
@@ -41,7 +41,7 @@ public:
 	  Array[0] is empty, program must be loaded.
 	  ----------------------------------------------------*/
 
-	UM() {
+	UMEmulator() {
 		for (uint32& x : regs) x = 0;
 		arrays.push_back(vector<uint32>());
 		exec_finger = 0;
@@ -55,7 +55,7 @@ public:
 	  A, B, C return reference to corresponding register.
 	  ----------------------------------------------------*/
 
-	uint32 command(uint32 platter) const {
+	uint32 get_command(uint32 platter) const {
 		return platter >> 28;
 	}
 
@@ -155,23 +155,23 @@ public:
 		// TODO: fail
 	}
 
-	typedef void(UM::*operation)(uint32);
+	typedef void(UMEmulator::*operation)(uint32);
 	operation operationlist[15] = {
-								&UM::_0_conditional_move,
-								&UM::_1_array_index,
-								&UM::_2_array_amendment,
-								&UM::_3_addition,
-								&UM::_4_multiplication,
-								&UM::_5_division,
-								&UM::_6_not_and,
-								&UM::_7_halt,
-								&UM::_8_allocation,
-								&UM::_9_abandonment,
-								&UM::_10_output,
-								&UM::_11_input,
-								&UM::_12_load_program,
-								&UM::_13_orthography,
-								&UM::_14_15_illegal
+								&UMEmulator::_0_conditional_move,
+								&UMEmulator::_1_array_index,
+								&UMEmulator::_2_array_amendment,
+								&UMEmulator::_3_addition,
+								&UMEmulator::_4_multiplication,
+								&UMEmulator::_5_division,
+								&UMEmulator::_6_not_and,
+								&UMEmulator::_7_halt,
+								&UMEmulator::_8_allocation,
+								&UMEmulator::_9_abandonment,
+								&UMEmulator::_10_output,
+								&UMEmulator::_11_input,
+								&UMEmulator::_12_load_program,
+								&UMEmulator::_13_orthography,
+								&UMEmulator::_14_15_illegal
 								};
 	
 
@@ -185,10 +185,18 @@ public:
 	  Load program from given filename.
 	  ----------------------------------------------------*/
 	void load(string file) {
-		/*arrays[0].clear();
+		std::ifstream s(file, std::ios::binary);
+		if (!s.is_open()) {
+			// TODO: fail
+			return;
+		}
+		s.unsetf(std::ios::skipws);
+
+		arrays[0].clear();
 		unsigned char byte;
 		uint32 word = 0;
 		int count = 0;
+
 		while (s >> byte) {
 			word = (word << 8) + byte;
 			count ++;
@@ -196,25 +204,23 @@ public:
 				arrays[0].push_back(word);
 				word = count = 0;
 			}
-		}*/
+		}
 	}
 
-
-};
 
 
 /**===================== BINDING ======================*/
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(um, m) {
+PYBIND11_MODULE(um_emulator, m) {
 	m.doc() = "Universal Machine Emulator";
 
-	py::class_<UM> UMclass(m, "UniversalMachine");
+	py::class_<UMEmulator> UMclass(m, "UniversalMachine");
 	UMclass
 		.def(py::init<>())
-		.def_readonly("error_message", &UM::error_message)
+		.def_readonly("error_message", &UMEmulator::error_message)
 
-		.def("load", &UM::load)
+		.def("load", &UMEmulator::load)
 	;
 }
