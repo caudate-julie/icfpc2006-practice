@@ -11,3 +11,5 @@ __pycache__/
 # /bot.log
 /TODO.txt
 temp*
+practice*
+/auxiliary/*

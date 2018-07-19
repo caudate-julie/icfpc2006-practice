@@ -1,6 +1,6 @@
-// cl /EHsc /LD um_emulator.cpp C:\Python36\libs\python36.lib /Feum_emulator.pyd /I C:\Python36\include
+// cl /EHsc /LD um_emulator.cpp C:\Python37\libs\python37.lib /Feum_emulator.pyd /I C:\Python37\include
 /*
-cl /EHsc /LD /O2 um_emulator.cpp C:\Python36\libs\python36.lib /Feum_emulator.pyd /I C:\Python36\include && py temp.py
+cl /EHsc /LD /O2 um_emulator.cpp C:\Python37\libs\python37.lib /Feum_emulator.pyd /I C:\Python37\include && py temp.py
 */
 
 #include <pybind11/stl.h>
@@ -25,7 +25,7 @@ class UMEmulator {
 	/**-----------------------------------------------------
 	  UNIVERSAL MACHINE EMULATOR (processor).
 	  Runs machine from file.
-	  Runs in chunks from input request to input request / 
+	  Runs in chunks from input request to input request /
 	  halt.
 	  ----------------------------------------------------*/
 
@@ -41,7 +41,7 @@ public:
 	std::stringstream out;
 	string error_message;
 
-    enum MODE { 
+    enum MODE {
                 debug = 1,		// special
                 echo = 2,		// show output on screen (cout in addition to sstring)
                 echoinput = 4,  // add input to output (not cout unless has echo mode)
@@ -49,7 +49,7 @@ public:
     unsigned mode;
 
 	/**-----------------------------------------------------
-	  Empty universal machine. 
+	  Empty universal machine.
 	  Array[0] is empty, program must be loaded.
 	  ----------------------------------------------------*/
 
@@ -66,7 +66,7 @@ public:
 
 
 	/**-----------------------------------------------------
-	  Platter parsing. 
+	  Platter parsing.
 	  A, B, C return reference to corresponding register.
 	  ----------------------------------------------------*/
 
@@ -218,7 +218,7 @@ public:
 	
 	/**-----------------------------------------------------
 	  Load program from file.
-	  Returns if the machine is waiting for input (input 
+	  Returns if the machine is waiting for input (input
 	  stream is empty).
 	  ----------------------------------------------------*/
 	void load(string file) {
