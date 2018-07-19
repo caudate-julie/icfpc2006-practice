@@ -5,9 +5,9 @@
 __pycache__/
 # practice*
 *.umz
-temp.py
 # !one_out.umz
 # /*.in
 # /*.out
 # /bot.log
 /TODO.txt
+temp*

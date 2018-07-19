@@ -1,4 +1,7 @@
 // cl /EHsc /LD um_emulator.cpp C:\Python36\libs\python36.lib /Feum_emulator.pyd /I C:\Python36\include
+/*
+cl /EHsc /LD /O2 um_emulator.cpp C:\Python36\libs\python36.lib /Feum_emulator.pyd /I C:\Python36\include && py temp.py
+*/
 
 #include <pybind11/stl.h>
 #include <pybind11/pybind11.h>
@@ -8,7 +11,6 @@
 #include <string>
 #include <sstream>
 #include <cassert>
-//#include <algorithm>
 
 using std::vector;
 using std::string;
@@ -22,7 +24,7 @@ class UMEmulator {
 
 	/**-----------------------------------------------------
 	  UNIVERSAL MACHINE EMULATOR (processor).
-	  Runs programs from input stream; writes them to output.
+	  Runs machine from file.
 	  Runs in chunks from input request to input request / 
 	  halt.
 	  ----------------------------------------------------*/
@@ -40,11 +42,11 @@ public:
 	string error_message;
 
     enum MODE { 
-                debug = 1,
-                echo = 2,
-                echoinput = 4,
+                debug = 1,		// special
+                echo = 2,		// show output on screen (cout in addition to sstring)
+                echoinput = 4,  // add input to output (not cout unless has echo mode)
     };
-    unsigned int mode;
+    unsigned mode;
 
 	/**-----------------------------------------------------
 	  Empty universal machine. 
@@ -57,6 +59,9 @@ public:
 		exec_finger = 0;
 		halt = waiting_for_input = false;
 		error_message = "";
+		// clear input & output?
+		//in.unsetf(std::ios::skipws);
+		//out.unsetf(std::ios::skipws);
 	}
 
 
@@ -82,6 +87,7 @@ public:
 	}
 
 
+
 	/**=============== LIST OF COMMANDS ===================*/
 	
 	void _0_conditional_move(uint32 p) {
@@ -89,22 +95,13 @@ public:
 	}
 
 	void _1_array_index(uint32 p) {
-		for (uint32 x : abandoned) {
-			if (x == B(p)) return fail_operation("Calling abandoned array");
-		}
-		if (arrays.size() <= B(p) || arrays[B(p)].size() <= C(p)) {
+		if (B(p) >= arrays.size() || C(p) >= arrays[B(p)].size()) {
 			return fail_operation("Index out of bounds");
 		}
 		A(p) = arrays[B(p)][C(p)];
 	}
 
 	void _2_array_amendment(uint32 p) {
-		for (uint32 x : abandoned) {
-			if (x == A(p)) {
-				fail_operation("Calling abandoned array");
-				return;
-			}
-		}
 		if (A(p) >= arrays.size() || B(p) >= arrays[A(p)].size()) {
 			return fail_operation("Index out of bounds");
 		}
@@ -149,11 +146,12 @@ public:
 
 	void _9_abandonment(uint32 p) {
 		if (C(p) == 0) return fail_operation("Abandoning working program");
+		arrays[C(p)] = vector<uint32>();
 		abandoned.push_back(C(p));
 	}
 
 	void _10_output(uint32 p) {
-		if (C(p) > 255) return fail_operation("Output of non-ASCII");
+		if (C(p) > 255) return fail_operation("Not-ASCII output");
 		out << (char)C(p);
 		if (mode & MODE::echo) std::cout << (char)C(p);
 	}
@@ -170,9 +168,6 @@ public:
 	}
 	
 	void _12_load_program(uint32 p) {
-		for (uint32 x : abandoned) {
-			if (x == B(p)) return fail_operation("Calling abandoned array");
-		}
 		if (B(p)) arrays[0] = arrays[B(p)];
 		if (C(p) >= arrays[0].size()) return fail_operation("Finger out of bounds");
 		exec_finger = C(p);
@@ -222,17 +217,16 @@ public:
 	  ----------------------------------------------------*/
 	
 	/**-----------------------------------------------------
-	  Load program from given filename.
+	  Load program from file.
 	  Returns if the machine is waiting for input (input 
 	  stream is empty).
 	  ----------------------------------------------------*/
 	void load(string file) {
 		std::ifstream s(file, std::ios::binary);
 		if (!s.is_open()) {
-			// TODO: fail
-			return;
+			return fail_operation("Cannot open file");
 		}
-		s.unsetf(std::ios::skipws);
+		s.unsetf(std::ios::skipws);		
 
 		arrays[0].clear();
 		unsigned char byte;
@@ -247,7 +241,7 @@ public:
 				word = count = 0;
 			}
 		}
-		assert (count == 0);
+		assert (count == 0);	// file had 4x bytes
 	}
 
 
@@ -257,11 +251,17 @@ public:
 	}
 
 
+
+	/**================= RUNS & RESULTS ===================*/
+	
 	/**-----------------------------------------------------
-	  --------------------  RUUUUUUN!-----------------------
+
 	  ----------------------------------------------------*/
 	bool run(string s) {
-		in.str(s);
+		in.clear();
+		in.str(string());
+		in << s << std::flush;
+		waiting_for_input = false;
 		while (!halt && !waiting_for_input) {
 			uint32 platter = arrays[0][exec_finger++];
 			uint32 cmd = get_command(platter);
@@ -272,6 +272,17 @@ public:
 		return waiting_for_input;
 	}
 
+
+	/**-----------------------------------------------------
+	  Returns and clears output.
+	  ? Clear in separate method
+	  ----------------------------------------------------*/
+	string read() {
+		string result = out.str();
+		out.clear();
+		out.str(string());
+		return result;
+	}
 
 };
 
@@ -292,7 +303,7 @@ PYBIND11_MODULE(um_emulator, m) {
 		.def("load", &UMEmulator::load)
 		.def("setmode", &UMEmulator::setmode)
 		.def("run", &UMEmulator::run)
-
+		.def("read", &UMEmulator::read)
 	;
 
 	py::enum_<UMEmulator::MODE>(UMclass, "mode")
