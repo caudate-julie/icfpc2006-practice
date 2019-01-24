@@ -1,8 +1,3 @@
-// cl /EHsc /LD um_emulator.cpp C:\Python37\libs\python37.lib /Feum_emulator.pyd /I C:\Python37\include
-/*
-cl /EHsc /LD /O2 um_emulator.cpp C:\Python37\libs\python37.lib /Feum_emulator.pyd /I C:\Python37\include && py temp.py
-*/
-
 #include <pybind11/stl.h>
 #include <pybind11/pybind11.h>
 #include <iostream>
@@ -213,10 +208,6 @@ public:
 	/**================== SET INITIALS ====================*/
 
 	/**-----------------------------------------------------
-	  ? Load program from given stream.
-	  ----------------------------------------------------*/
-	
-	/**-----------------------------------------------------
 	  Load program from file.
 	  Returns if the machine is waiting for input (input
 	  stream is empty).
@@ -257,7 +248,7 @@ public:
 	/**-----------------------------------------------------
 
 	  ----------------------------------------------------*/
-	bool run(string s) {
+	void run(string s) {
 		in.clear();
 		in.str(string());
 		in << s << std::flush;
@@ -269,7 +260,6 @@ public:
 			if (exec_finger >= arrays[0].size()) fail_operation("Finger out of bounds");
 		}
 		assert (halt ^ waiting_for_input);
-		return waiting_for_input;
 	}
 
 
@@ -277,12 +267,25 @@ public:
 	  Returns and clears output.
 	  ? Clear in separate method
 	  ----------------------------------------------------*/
-	string read() {
+	string read_output() {
 		string result = out.str();
 		out.clear();
 		out.str(string());
 		return result;
 	}
+
+	// string read_output() const {
+	// 	std::ofstream f("umix.um", std::ios::binary);
+	// 	unsigned char c;
+	// 	while (out >> c) {
+	// 		f << c;
+	// 	}
+	// 	out.clear();
+	// 	out.str("");
+	// 	return "";
+	// }
+
+
 
 };
 
@@ -299,11 +302,15 @@ PYBIND11_MODULE(um_emulator, m) {
 	UMclass
 		.def(py::init<>())
 		.def_readonly("error_message", &UMEmulator::error_message)
+		.def_readonly("is_waiting", &UMEmulator::waiting_for_input)
+		.def_readonly("halted", &UMEmulator::halt)
 
 		.def("load", &UMEmulator::load)
 		.def("setmode", &UMEmulator::setmode)
-		.def("run", &UMEmulator::run)
-		.def("read", &UMEmulator::read)
+		.def("run", [](UMEmulator &self, py::bytes s) { self.run(s); })
+		.def("read_output", [](UMEmulator &self) { 
+			return py::bytes(self.read_output());
+		})
 	;
 
 	py::enum_<UMEmulator::MODE>(UMclass, "mode")

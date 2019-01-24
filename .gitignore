@@ -2,12 +2,13 @@
 *.lib
 *.obj
 *.pyd
+*.sublime*
 __pycache__/
 # practice*
 *.umz
 # !one_out.umz
-# /*.in
-# /*.out
+/*.in
+/*.out
 # /bot.log
 /TODO.txt
 temp*
