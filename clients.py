@@ -34,6 +34,8 @@ class UserClient(UMClient):
         self.eof = eof
 
     def run(self, um: UniversalMachine):
+        um.output_buffer_limit = 1
+        um.command_limit = None
         f = open(self.outfile, 'w')
         instream = []
 
@@ -50,7 +52,10 @@ class UserClient(UMClient):
             #     print(um.error_message)
             #     break
 
-            assert um.state == UniversalMachine.State.WAITING # todo: output limit
+            if um.state == UniversalMachine.State.IDLE:
+                continue
+
+            assert um.state == UniversalMachine.State.WAITING
 
             if len(instream) == 0:
                 instream = sys.stdin.readline()
@@ -61,6 +66,7 @@ class UserClient(UMClient):
 
             um.write_input(ord(instream.pop(0)))
         f.close()
+        um.output_buffer_limit = None
 
 
 if __name__ == '__main__':
