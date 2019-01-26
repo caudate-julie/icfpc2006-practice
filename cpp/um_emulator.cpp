@@ -6,6 +6,7 @@
 #include <string>
 #include <sstream>
 #include <cassert>
+#include <optional>
 
 using std::vector;
 using std::string;
@@ -29,34 +30,51 @@ public:
 	vector<uint32> abandoned;
 	uint32 exec_finger;
 	uint32 regs[8];
-	bool halt;
-	bool waiting_for_input;
 
-	std::stringstream in;
-	std::stringstream out;
+	//  ctor          
+	// ------> IDLE <-----+------+
+	//          |         ^      |
+	//          | run     |      | write_input
+	//  +-------+---------+      |
+	//  V                 V      |
+	// HALT            WAITING --+
+	//
+	// RUNNING is an internal state, never to be seen by user.
+	
+	enum class State {
+		IDLE, RUNNING, WAITING, HALT
+	} state;
+
+	std::optional<int> in;					// accepts input only when requested
+	string out;
+	std::optional<unsigned> output_buffer_limit;
+	std::optional<unsigned> command_limit;
 	string error_message;
 
-    enum MODE {
-                debug = 1,		// special
-                echo = 2,		// show output on screen (cout in addition to sstring)
-                echoinput = 4,  // add input to output (not cout unless has echo mode)
-    };
-    unsigned mode;
-
 	/**-----------------------------------------------------
-	  Empty universal machine.
-	  Array[0] is empty, program must be loaded.
+	  Universal machine, gets the text of the program.
 	  ----------------------------------------------------*/
-
-	UMEmulator() {
+	UMEmulator(const string& program) {
 		for (uint32& x : regs) x = 0;
-		arrays.push_back(vector<uint32>());
+		arrays.emplace_back();
 		exec_finger = 0;
-		halt = waiting_for_input = false;
+		state = State::IDLE;
+		in = std::nullopt;
+		output_buffer_limit = std::nullopt;
+		command_limit = std::nullopt;
 		error_message = "";
-		// clear input & output?
-		//in.unsetf(std::ios::skipws);
-		//out.unsetf(std::ios::skipws);
+		out = "";
+	
+		assert (program.size() % 4 == 0);	// file had 4x bytes
+
+		uint32 word = 0;
+		for (int i = 0; i < program.size(); i++) {
+			word = (word << 8) + static_cast<uint8_t>(program[i]);
+			if (i % 4 == 3) {
+				arrays[0].push_back(word);
+				word = 0;
+			}
+		}
 	}
 
 
@@ -121,7 +139,7 @@ public:
 	}
 	
 	void _7_halt(uint32 p) {
-		halt = true;
+		state = State::HALT;
 	}
 
 	void _8_allocation(uint32 p) {
@@ -147,19 +165,19 @@ public:
 
 	void _10_output(uint32 p) {
 		if (C(p) > 255) return fail_operation("Not-ASCII output");
-		out << (char)C(p);
-		if (mode & MODE::echo) std::cout << (char)C(p);
+		out.push_back((char)C(p));
 	}
 	
 	void _11_input(uint32 p) {
-		unsigned char c;
-		if (!(in >> c)) {
-			waiting_for_input = true;
+		assert (state == State::RUNNING);
+		if (in == std::nullopt) {
+			state = State::WAITING;
 			exec_finger--;
 			return;
 		}
-		C(p) = (uint32)c;
-		if (mode & MODE::echoinput) _10_output(p);
+
+		if (in < -1 || in > 255) return fail_operation("Not-ASCII output");
+		C(p) = (uint32)in.value();
 	}
 	
 	void _12_load_program(uint32 p) {
@@ -180,7 +198,7 @@ public:
 
 	void fail_operation(string message) {
 		error_message = message;
-		halt = true;
+		state = State::HALT;
 	}
 
 
@@ -205,87 +223,47 @@ public:
 								};
 	
 
-	/**================== SET INITIALS ====================*/
-
-	/**-----------------------------------------------------
-	  Load program from file.
-	  Returns if the machine is waiting for input (input
-	  stream is empty).
-	  ----------------------------------------------------*/
-	void load(string file) {
-		std::ifstream s(file, std::ios::binary);
-		if (!s.is_open()) {
-			return fail_operation("Cannot open file");
-		}
-		s.unsetf(std::ios::skipws);		
-
-		arrays[0].clear();
-		unsigned char byte;
-		uint32 word = 0;
-		unsigned count = 0;
-
-		while (s >> byte) {
-			word = (word << 8) + byte;
-			count ++;
-			if (count == 4) {
-				arrays[0].push_back(word);
-				word = count = 0;
-			}
-		}
-		assert (count == 0);	// file had 4x bytes
-	}
-
-
-	void setmode(vector<MODE> modelist) {
-		mode = 0;
-		for (MODE m : modelist) mode |= m;
-	}
-
-
-
 	/**================= RUNS & RESULTS ===================*/
 	
 	/**-----------------------------------------------------
+	 * Runs the current program from the previous pause
+	 * untill halt or input request or buffer/command limit
+	 * if set.
+	 * Returns the new output accumulated.
+	 * ---------------------------------------------------*/
+	string run(/*string s*/) {
+		assert (out.empty());
+		assert (state == State::IDLE);
+		state = State::RUNNING;
 
-	  ----------------------------------------------------*/
-	void run(string s) {
-		in.clear();
-		in.str(string());
-		in << s << std::flush;
-		waiting_for_input = false;
-		while (!halt && !waiting_for_input) {
+		unsigned command_count = 0;
+		while (state == State::RUNNING) {
+			if (output_buffer_limit && out.size() >= output_buffer_limit
+			    || command_limit && command_count >= command_limit) {
+				state = State::IDLE;
+				break;
+			}
 			uint32 platter = arrays[0][exec_finger++];
 			uint32 cmd = get_command(platter);
 			std::invoke(operationlist[cmd], this, platter);
-			if (exec_finger >= arrays[0].size()) fail_operation("Finger out of bounds");
+			if (exec_finger >= arrays[0].size()) {
+				fail_operation("Finger out of bounds");
+				break;
+			}
+			command_count ++;
 		}
-		assert (halt ^ waiting_for_input);
-	}
-
-
-	/**-----------------------------------------------------
-	  Returns and clears output.
-	  ? Clear in separate method
-	  ----------------------------------------------------*/
-	string read_output() {
-		string result = out.str();
-		out.clear();
-		out.str(string());
+		
+		string result;
+		result.swap(out);
 		return result;
 	}
 
-	// string read_output() const {
-	// 	std::ofstream f("umix.um", std::ios::binary);
-	// 	unsigned char c;
-	// 	while (out >> c) {
-	// 		f << c;
-	// 	}
-	// 	out.clear();
-	// 	out.str("");
-	// 	return "";
-	// }
-
-
+	void write_input(int c) {
+		assert (state == State::WAITING);
+		assert (in == std::nullopt);
+		in = c;
+		state = State::IDLE;
+	}
 
 };
 
@@ -300,23 +278,21 @@ PYBIND11_MODULE(um_emulator, m) {
 
 	py::class_<UMEmulator> UMclass(m, "UniversalMachine");
 	UMclass
-		.def(py::init<>())
+		.def(py::init([](py::bytes b) { return UMEmulator(b); }))
 		.def_readonly("error_message", &UMEmulator::error_message)
-		.def_readonly("is_waiting", &UMEmulator::waiting_for_input)
-		.def_readonly("halted", &UMEmulator::halt)
+		.def_readonly("state", &UMEmulator::state)
 
-		.def("load", &UMEmulator::load)
-		.def("setmode", &UMEmulator::setmode)
-		.def("run", [](UMEmulator &self, py::bytes s) { self.run(s); })
-		.def("read_output", [](UMEmulator &self) { 
-			return py::bytes(self.read_output());
-		})
+		.def_readwrite("output_buffer_limit", &UMEmulator::output_buffer_limit)
+		.def_readwrite("command_limit", &UMEmulator::command_limit)
+
+		.def("run", [](UMEmulator& u) { return py::bytes(u.run()); })
+		.def("write_input", &UMEmulator::write_input)
 	;
 
-	py::enum_<UMEmulator::MODE>(UMclass, "mode")
-        .value("debug", UMEmulator::MODE::debug)
-        .value("echo", UMEmulator::MODE::echo)
-        .value("echoinput", UMEmulator::MODE::echoinput)
-        .export_values()
-    ;
+	py::enum_<UMEmulator::State>(UMclass, "State")
+	    .value("IDLE", UMEmulator::State::IDLE)
+		.value("WAITING", UMEmulator::State::WAITING)
+		.value("HALT", UMEmulator::State::HALT)
+		.export_values()
+	;
 }

@@ -4,6 +4,7 @@
 *.pyd
 *.sublime*
 __pycache__/
+.vscode
 # practice*
 *.umz
 # !one_out.umz
