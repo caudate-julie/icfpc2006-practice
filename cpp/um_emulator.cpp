@@ -178,6 +178,7 @@ public:
 
 		if (in < -1 || in > 255) return fail_operation("Not-ASCII output");
 		C(p) = (uint32)in.value();
+		in = std::nullopt;
 	}
 	
 	void _12_load_program(uint32 p) {

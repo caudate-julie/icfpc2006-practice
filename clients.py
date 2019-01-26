@@ -1,18 +1,14 @@
 from abc import abstractmethod
-from cpp.um_import import UniversalMachine
+from cpp.um_emulator import UniversalMachine
+import sys
 import io
 
 class UMClient:
     def __init__(self):
-        self.output = b''
-        self.mode = []
+        self.outfile = 'default.out'
 
     @abstractmethod
     def run(self, um: UniversalMachine):
-        raise NotImplementedError()
-
-    @abstractmethod
-    def setmode(self, modeversion):
         raise NotImplementedError()
 
 
@@ -23,15 +19,9 @@ class FileClient(UMClient):
         UMClient.__init__(self)
         self.filename = filename
 
-    def setmode(self, modeversion):
-        self.mode = [UniversalMachine.mode.echoinput]
-        if modeversion == 'verbal':
-            self.mode.append(UniversalMachine.mode.echo)
-
     def run(self, um):
         f = open(self.filename, 'rb')
         instream = f.read()
-        um.setmode(self.mode)
         um.run(instream)
         self.output = um.read_output()
         f.close()
@@ -43,31 +33,34 @@ class UserClient(UMClient):
         UMClient.__init__(self)
         self.eof = eof
 
-    def setmode(self, modeversion):
-        self.mode = []
+    def run(self, um: UniversalMachine):
+        f = open(self.outfile, 'w')
+        instream = []
 
-    def run(self, um):
-        outstream = []
-        instream = ''
-        um.setmode(self.mode)
         while True:
-            um.run(instream)
-            outstream.append(um.read_output())
-            if not um.is_waiting: 
+            out = um.run().decode('ascii')
+            f.write(out)
+            print(out, end='', flush=True)
+
+            if um.state == UniversalMachine.State.HALT:
                 break
 
-            instream = input(outstream[-1])
-            if instream == self.eof:
-                break
+            # if um.state == UniversalMachine.State.ERROR:
+            #     # TODO
+            #     print(um.error_message)
+            #     break
 
-            outstream.append(instream)
-        output = ''.join(outstream)
+            assert um.state == UniversalMachine.State.WAITING # todo: output limit
 
+            if len(instream) == 0:
+                instream = sys.stdin.readline()
+                if instream.strip() == self.eof:
+                    break
+                f.write(instream)
+                instream = list(instream)
 
-
-clientlist= { 'u' : UserClient,
-              'f' : FileClient,
-            }
+            um.write_input(ord(instream.pop(0)))
+        f.close()
 
 
 if __name__ == '__main__':
