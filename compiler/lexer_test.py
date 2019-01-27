@@ -11,14 +11,21 @@ def test_integers():
                        Lexeme(type = LexemeType.INTEGER_NUMERAL, value = 0)]
 
 
-@pytest.mark.skip(reason="in progress")
 def test_all():
-    lexer = Lexer('abc12_3 += 31--5.4)')
+    lexer = Lexer('abc12_3 +=if 31 if4k--5.4)')
     result = lexer.parse()
-    assert lexemes == [Lexeme(type = LexemeType.IDENTIFIER, value = 'abc12_3'),
+    assert result == [Lexeme(type = LexemeType.IDENTIFIER, value = 'abc12_3'),
                        Lexeme(type = LexemeType.OPERATOR, value = '+='),
+                       Lexeme(type = LexemeType.KEYWORD, value = 'if'),
                        Lexeme(type = LexemeType.INTEGER_NUMERAL, value = 31),
+                       Lexeme(type = LexemeType.IDENTIFIER, value = 'if4k'),
                        Lexeme(type = LexemeType.OPERATOR, value = '-'),
                        Lexeme(type = LexemeType.OPERATOR, value = '-'),
                        Lexeme(type = LexemeType.FLOAT_NUMERAL, value = 5.4),
-                       Lexeme(type = LexemeType.BRACKET, value = ')')]
+                       Lexeme(type = LexemeType.BRACKET, value = ')')
+    ]
+
+@pytest.mark.skip
+def teststuff():
+    lexer = Lexer('+ \n')
+    result = lexer.parse()

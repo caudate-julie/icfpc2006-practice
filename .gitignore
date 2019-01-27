@@ -15,3 +15,6 @@ __pycache__/
 temp*
 practice*
 /auxiliary/*
+.coverage
+.coveragerc
+htmlcov
