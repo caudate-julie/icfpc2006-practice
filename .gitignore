@@ -1,20 +1,22 @@
+# compilated files
 *.exp
 *.lib
 *.obj
 *.pyd
-*.sublime*
 __pycache__/
+
+# configuration files
+*.sublime*
 .vscode
-# practice*
+.coverage*
+htmlcov
+
+# .umz and in/out files
 *.umz
-# !one_out.umz
 /*.in
 /*.out
-# /bot.log
+logs
+
+# auxiliary
 /TODO.txt
-temp*
-practice*
 /auxiliary/*
-.coverage
-.coveragerc
-htmlcov
