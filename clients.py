@@ -1,27 +1,29 @@
-from abc import abstractmethod
 from cpp.um_emulator import UniversalMachine
+
+from abc import abstractmethod
 from pathlib import Path
+from typing import Optional
 import sys
 import io
 
+# Abstract baseclass for Clients
+# self.outfile : fileobject, opened for writing as binary
+# self.echo : echoes to stdin if True
 class UMClient:
-    def __init__(self, outfile, first):
-        self.outfile = Path('logs') / (outfile + '.out')
-        if first and self.outfile.exists():
-            self.outfile.write_text('')
+    def __init__(self, outfile):
+        self.outfile = outfile
         self.echo = True
 
     def run(self, um: UniversalMachine):
         self.setup(um)
-        f = open(self.outfile, 'a')
-        instream = []
+        instream = bytearray()
 
         while True:
-            out = um.run().decode('ascii')
-            f.write(out)
+            out = um.run()
+            self.outfile.write(out)
 
             if self.echo:
-                print(out, end='', flush=True)
+                print(out.decode('ascii'), end='', flush=True)
 
             if um.state == UniversalMachine.State.HALT:
                 break
@@ -39,48 +41,41 @@ class UMClient:
             if len(instream) == 0:
                 instream = self.input()
                 if instream == None: 
-                    break    
+                    break
                 
-                f.write(instream)
-                instream = list(instream)
-            um.write_input(ord(instream.pop(0)))
-
-        f.close()
+                self.outfile.write(instream)
+            um.write_input(instream.pop(0))
 
     @abstractmethod
     def setup(self, um):
         raise NotImplementedError()
     
     @abstractmethod
-    def input(self):
+    def input(self) -> Optional[bytearray]:
         raise NotImplementedError()    
 
 
+# Reads input for UM from file
 class FileClient(UMClient):
-    infile: str
 
-    def __init__(self, infile, outfile=None, first=False):
-        if outfile == None: outfile = infile
-        UMClient.__init__(self, outfile, first)
-        self.instream = io.StringIO((Path('logs') / (infile + '.in')).read_text())
+    def __init__(self, infile, outfile):
+        super().__init__(outfile)
+        self.instream = io.BytesIO(infile.read_bytes())
 
     def setup(self, um: UniversalMachine):
         um.output_buffer_limit = 1 if self.echo else None
         um.command_limit = None
 
-    def input(self):
+    def input(self) -> Optional[bytearray]:
         c = self.instream.read(1)
         if len(c) == 0:
             return None
-        return c
+        return bytearray(c)
 
 
 class UserClient(UMClient):
-
-    def __init__(self, eof, outfile=None, first=False):
-        if outfile == None:
-            outfile = 'default'
-        UMClient.__init__(self, outfile, first)
+    def __init__(self, eof, outfile):
+        super().__init__(outfile)
         self.eof = eof
         self.inputlog = Path('logs') / 'input.in'
         if self.inputlog.exists():
@@ -90,7 +85,7 @@ class UserClient(UMClient):
         um.output_buffer_limit = 1
         um.command_limit = None
 
-    def input(self):
+    def input(self) -> Optional[bytearray]:
         instream = sys.stdin.readline()
         if instream.strip() == self.eof:
             return None
@@ -98,14 +93,15 @@ class UserClient(UMClient):
         with self.inputlog.open(mode='a') as f:
             f.write(instream)
 
-        return instream
+        return bytearray(instream.encode('ascii'))
 
 
 if __name__ == '__main__':
-    um = UniversalMachine(Path('umix.umz').read_bytes())
-    client = UserClient('EOU', first=True)
-    client.run(um)
+    with Path('logs/default.out').open('wb') as f:
+        um = UniversalMachine(Path('umix.umz').read_bytes())
+        client = UserClient('EOU', f)
+        client.run(um)
 
-    um = UniversalMachine(Path('umix.umz').read_bytes())
-    client = FileClient('input')
-    client.run(um)
+        um = UniversalMachine(Path('umix.umz').read_bytes())
+        client = FileClient(Path('logs/input.in'), f)
+        client.run(um)

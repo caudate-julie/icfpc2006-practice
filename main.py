@@ -19,6 +19,7 @@ def run(clientlist):
         client.run(um)
 
 
+# all lines that match score pattern are collected in logs/score.txt and summed up
 def collect_score():
     # PUZZL.TSK=100@1001|14370747643c6d2db0a40ecb4b0bb65
     # | 1 |     |2|
@@ -45,8 +46,7 @@ def collect_score():
                 f.write(line)
 
 
-
 if __name__ == '__main__':
+    clientlist = [UserClient('EOU')]
+    run(clientlist)
     collect_score()
-    # clientlist = [UserClient('EOU', first=True)]
-    # run(clientlist)
