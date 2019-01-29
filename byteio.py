@@ -1,23 +1,24 @@
 import io
-from typing import List
+from typing import List, Optional
 from abc import abstractmethod
 
-class ByteReader:
+class BaseReader:
 
     # returns one byte from stream or None if EOF
-    def readbyte():
+    def readbyte(self) -> Optional[int]:
         return None
 
 
-class TextByteReader(ByteReader):
+class TextReader(BaseReader):
     # stream is fileobject, opened for reading as text
     def __init__(self, stream, *, encoding='ascii', errors='strict'):
+        assert stream.readable()
         self.stream = stream
         self.encoding = encoding
         self.errors = errors
         self.buffer = bytearray()
     
-    def readbyte(self):
+    def readbyte(self) -> Optional[int]:
         if len(self.buffer) > 0:
             return self.buffer.pop(0)
 
@@ -30,12 +31,26 @@ class TextByteReader(ByteReader):
         return c[0]
 
 
-class ForkByteReader(ByteReader):
-    def __init__(self, reader: ByteReader, writers):
+class ByteReader(BaseReader):
+    # stream is fileobject, opened for reading as binary
+    def __init__(self, stream):
+        assert stream.readable()
+        self.stream = stream
+    
+    def readbyte(self) -> Optional[int]:
+        c = self.stream.read(1)
+        if len(c) == 0:
+            return None
+        assert len(c) == 1
+        return c[0]
+
+
+class ForkReader(BaseReader):
+    def __init__(self, reader: BaseReader, writers):
         self.reader = reader
         self.writers = writers
     
-    def readbyte(self):
+    def readbyte(self) -> Optional[int]:
         byte = self.reader.readbyte()
         if byte is None:
             return None
@@ -45,11 +60,11 @@ class ForkByteReader(ByteReader):
         return byte
 
 
-class SequentialByteReader(ByteReader):
+class SequentialReader(BaseReader):
     def __init__(self, *readers):
         self.readers = list(readers)
     
-    def readbyte(self):
+    def readbyte(self) -> Optional[int]:
         while len(self.readers) > 0:
             c = self.readers[0].readbyte()
             if c is None:
@@ -60,49 +75,52 @@ class SequentialByteReader(ByteReader):
 
 # ------------------------------------------------- #
 
-class ByteWriter:
+class BaseWriter:
 
-    def writebyte():
+    def writebyte(self, byte: int):
         pass
 
 
-class TextByteWriter(ByteWriter):
+class TextWriter(BaseWriter):
     # stream is fileobject, opened for writing as text
     def __init__(self, stream, *, encoding='ascii', errors='strict'):
+        assert stream.writable()
         self.stream = stream
         self.encoding = encoding
         self.errors = errors
     
-    def writebyte(self, byte):
+    def writebyte(self, byte: int):
         b = bytes([byte]).decode(encoding=self.encoding, errors=self.errors)
         self.stream.write(b)
         self.stream.flush()
 
 
-class ByteByteWriter(ByteWriter):
-    # stream is fileobject, opened for reading as binary
+class ByteWriter(BaseWriter):
+    # stream is fileobject, opened for writing as binary
     def __init__(self, stream):
+        assert stream.writable()
         self.stream = stream
     
-    def writebyte(self, byte):
-        self.stream.write(byte)
+    def writebyte(self, byte: int):
+        self.stream.write(bytes([byte]))
         self.stream.flush()
 
 
-class ForkByteWriter(ByteWriter):
-    def __init__(self, *bytewriters):
-        self.bytewriters = bytewriters
+class ForkWriter(BaseWriter):
+    def __init__(self, *writers):
+        self.writers = writers
     
-    def writebyte(self, byte):
-        for stream in self.bytewriters:
+    def writebyte(self, byte: int):
+        for stream in self.writers:
             stream.writebyte(byte)
 
 
-__all__ = ['ByteReader', 
-           'ByteWriter',
-           'TextByteReader',
-           'TextByteWriter',
-           'ForkByteWriter',
-           'ForkByteReader',
-           'SequentialByteReader',
-           'ByteByteWriter']
+__all__ = ['BaseReader', 
+           'BaseWriter',
+           'TextReader',
+           'TextWriter',
+           'ForkWriter',
+           'ForkReader',
+           'SequentialReader',
+           'ByteReader',
+           'ByteWriter']

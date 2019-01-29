@@ -8,7 +8,7 @@ import sys
 import io
 
 
-def run(um: UniversalMachine, *, umin: ByteReader, umout: ByteWriter):
+def run(um: UniversalMachine, *, umin: BaseReader, umout: BaseWriter):
     while True:
         # if um.state == UniversalMachine.State.ERROR:
         #     # TODO
@@ -33,9 +33,9 @@ def run(um: UniversalMachine, *, umin: ByteReader, umout: ByteWriter):
 
 if __name__ == '__main__':
     with Path('logs/default.out').open('w') as f:
-        logwriter = TextByteWriter(f)
-        umin = ForkByteReader(TextByteReader(sys.stdin), [logwriter])
-        umout = ForkByteWriter(TextByteWriter(sys.stdout), logwriter)
+        logwriter = TextWriter(f)
+        umin = ForkReader(TextReader(sys.stdin), [logwriter])
+        umout = ForkWriter(TextWriter(sys.stdout), logwriter)
         
         um = UniversalMachine(Path('umix.umz').read_bytes())
         run(um, umin=umin, umout=umout)

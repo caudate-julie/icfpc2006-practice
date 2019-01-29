@@ -282,6 +282,7 @@ PYBIND11_MODULE(um_emulator, m) {
 	py::class_<UMEmulator> UMclass(m, "UniversalMachine");
 	UMclass
 		.def(py::init([](py::bytes b) { return UMEmulator(b); }))
+		.def(py::init<const UMEmulator&>())
 		.def_readonly("error_message", &UMEmulator::error_message)
 		.def_readonly("state", &UMEmulator::state)
 
