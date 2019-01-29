@@ -6,18 +6,17 @@ from collections import defaultdict
 import logging
 import pathlib
 import re
+import sys
 
 
 def run_user():
     um = UniversalMachine(pathlib.Path('umix.umz').read_bytes())
-    client = UserClient('EOF')
-    client.run(um)
-
-def run(clientlist, outfilepath):
-    um = UniversalMachine(pathlib.Path('umix.umz').read_bytes())
-    with outfilepath.open('wb') as f:
-        for client in clientlist:
-            client.run(um, f)
+    with (Path('logs/default.out').open('wb') as f, 
+          Path('logs/input.in').open('wb') as g):
+        logwriter = TextReader(f)
+        run(um,
+            umin=ForkReader(TextReader(sys.stdin), [logwriter, TextReader(g)]),
+            umout=ForkWriter(TextWriter(sys.stdout), logwriter))
 
 
 # all lines that match score pattern are collected in logs/score.txt and summed up
@@ -29,14 +28,16 @@ def collect_score():
     score = 0
     scorelines = defaultdict(set)
     for p in Path('logs').glob('*.out'):
-        with p.open() as f:
+        with p.open('rb') as f:
             for line in f:
-                m = regex.match(line)
+                
+                line = line.decode('ascii', errors='ignore').strip()
+                m = regex.search(line)
                 if m is None:
                     continue
-                if line in scorelines[m[1]]:
+                if m[0] in scorelines[m[1]]:
                     continue
-                scorelines[m[1]].add(line)
+                scorelines[m[1]].add(m[0])
                 score += int(m[2])
 
     with Path('logs/score.txt').open('w') as f:
@@ -44,10 +45,17 @@ def collect_score():
         for task in scorelines.keys():
             f.write('\n' + task + '\n')
             for line in scorelines[task]:
-                f.write(line)
+                f.write(line + '\n')
+    print(f'Total score: {score}. Result written to logs/score.txt')
 
 
 if __name__ == '__main__':
-    clientlist = [FileClient(Path('logs/guest.in')), UserClient('EOU')]
-    run(clientlist, Path('logs/guest.out'))
+    with Path('logs/guest.out').open('w') as f:
+        logwriter = TextWriter(f)
+        umin = ForkReader(TextReader(sys.stdin), [logwriter])
+        umout = ForkWriter(TextWriter(sys.stdout), logwriter)
+        
+        um = UniversalMachine(Path('umix.umz').read_bytes())
+        run(um, umin=umin, umout=umout)
+
     collect_score()

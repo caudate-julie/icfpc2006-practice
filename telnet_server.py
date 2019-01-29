@@ -3,44 +3,59 @@ from clients import run
 from cpp.um_emulator import UniversalMachine
 
 from pathlib import Path
-from time import time
 import sys
 import io
 import socketserver
+import threading
+import logging
 
-um = None
+
+file_lock = threading.Lock()
 
 class Handler(socketserver.StreamRequestHandler):
     def handle(self):
-        um = UniversalMachine(Path('umix.umz').read_bytes())
-        with Path('logs/telnet.out').open('wb') as f:
-            print(f'client address: {self.client_address[0]}')
-            request = b''
-            while True:
-                line = self.rfile.readline()
-                if line.strip() == b'': break
-                request += line
-            
-            response = proxy(request, ByteWriter(f))
-            self.wfile.write(response)
-            print('response sent')
-            self.wfile.close()
+        request = []
+        while True:
+            line = self.rfile.readline()
+            if line.strip() == b'':
+                break
+            request.append(line)
+
+        request = b''.join(request)
+        response = proxy(request, BaseWriter())
+        self.wfile.write(response)
+
+        with file_lock:
+            with Path('logs/default.out').open('ab') as f:
+                f.write(request + response)
+
+        request_header = request[:request.find(b' HTTP')].decode('ascii')
+        response_header = response[response.find(b' ')+1:response.find(b'\n')].decode('ascii')
+        logging.info(f'{request_header} | {response_header} | {len(response)} bytes')
+
+        self.wfile.close()
 
 
-def um_initialize():
+um = None
+um_lock = threading.Lock()
+
+def get_um_copy():
     global um
-    um = UniversalMachine(Path('umix.umz').read_bytes())
-    run(um, umin = ByteReader(io.BytesIO(b'guest\nmail\n')), umout=BaseWriter())
+    with um_lock:
+    
+        if um is None:
+            logging.info('loading um...')
+            um = UniversalMachine(Path('umix.umz').read_bytes())
+            b = b'guest\nmail\ntelnet 127.0.0.1 80\n'
+            run(um, umin = ByteReader(io.BytesIO(b)), umout=BaseWriter())
+            logging.info('done')
+        return UniversalMachine(um)
 
 
-# assumes um is already running
 def proxy(request, logwriter: BaseWriter):
-    if um == None:
-        um_initialize()
-    local_um = UniversalMachine(um)
-    connstring = b'telnet 127.0.0.1 80\n'
+    local_um = get_um_copy()
 
-    run(local_um, umin = ByteReader(io.BytesIO(connstring + request)), umout=logwriter)
+    run(local_um, umin = ByteReader(io.BytesIO(request)), umout=logwriter)
 
     outstream = io.BytesIO()
     run(local_um,
@@ -55,25 +70,13 @@ def proxy(request, logwriter: BaseWriter):
 if __name__ == '__main__':
     import hintcheck
     hintcheck.hintcheck_all_functions()
+
+    logging.basicConfig(format='%(asctime)s : %(message)s',
+                        level=logging.INFO,
+                        datefmt='%m-%d %H:%M:%S',)
+
     HOST, PORT = 'localhost', 5017
-    # with socketserver.ThreadingTCPServer((HOST, PORT), Handler) as server:
-    #     print('listening...')
-    #     server.serve_forever()
-
-    t = time()
-    connstring = b'guest\nmail\ntelnet 127.0.0.1 80\n'
-    um = UniversalMachine(Path('umix.umz').read_bytes())
-
-    run(um, 
-        umin=ByteReader(io.BytesIO(connstring)),
-        umout=BaseWriter())
-    print(f'runtime: {time()-t:.4}')
-    t = time()
-    um2 = UniversalMachine(um)
-    print(f'copytime: {time()-t:.4}')
-    
-
-    # with Path('logs/telnet.out').open('wb') as f:
-    #     logwriter = ByteWriter(f)
-    #     response = proxy(request, logwriter)
-    #     print('\n\nRESPONSE:\n', response)
+    with socketserver.ThreadingTCPServer((HOST, PORT), Handler) as server:
+        Path('logs/default.out').write_bytes(b'')
+        logging.info('listening...')
+        server.serve_forever()
