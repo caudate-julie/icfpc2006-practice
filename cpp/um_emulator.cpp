@@ -234,6 +234,8 @@ public:
 	 * ---------------------------------------------------*/
 	string run(/*string s*/) {
 		assert (out.empty());
+		if (state == State::HALT) return "";
+
 		assert (state == State::IDLE);
 		state = State::RUNNING;
 

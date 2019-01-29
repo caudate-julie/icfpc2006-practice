@@ -1,0 +1,26 @@
+guest
+mail
+
+help ls
+help rm
+help cat
+help more
+help cdup
+help cd
+help run
+help pwd
+help dump
+help logout
+help telnet
+
+ls
+cd ..
+ls
+cd ..
+ls
+/bin/basic
+/bin/umodem
+cd /home/guest
+
+./a.out
+dump core

@@ -10,31 +10,29 @@ import io
 # self.outfile : fileobject, opened for writing as binary
 # self.echo : echoes to stdin if True
 class UMClient:
-    def __init__(self, outfile):
-        self.outfile = outfile
+    def __init__(self):
         self.echo = True
 
-    def run(self, um: UniversalMachine):
+    def run(self, um: UniversalMachine, outfile):
         self.setup(um)
         instream = bytearray()
 
         while True:
-            out = um.run()
-            self.outfile.write(out)
-
-            if self.echo:
-                print(out.decode('ascii'), end='', flush=True)
-
-            if um.state == UniversalMachine.State.HALT:
-                break
-
             # if um.state == UniversalMachine.State.ERROR:
             #     # TODO
             #     print(um.error_message)
             #     break
 
             if um.state == UniversalMachine.State.IDLE:
+                out = um.run()
+                outfile.write(out)
+
+                if self.echo:
+                    print(out.decode('ascii'), end='', flush=True)
                 continue
+
+            if um.state == UniversalMachine.State.HALT:
+                break
 
             assert um.state == UniversalMachine.State.WAITING
 
@@ -43,7 +41,7 @@ class UMClient:
                 if instream == None: 
                     break
                 
-                self.outfile.write(instream)
+                outfile.write(instream)
             um.write_input(instream.pop(0))
 
     @abstractmethod
@@ -58,8 +56,8 @@ class UMClient:
 # Reads input for UM from file
 class FileClient(UMClient):
 
-    def __init__(self, infile, outfile):
-        super().__init__(outfile)
+    def __init__(self, infile):
+        super().__init__()
         self.instream = io.BytesIO(infile.read_bytes())
 
     def setup(self, um: UniversalMachine):
@@ -74,8 +72,8 @@ class FileClient(UMClient):
 
 
 class UserClient(UMClient):
-    def __init__(self, eof, outfile):
-        super().__init__(outfile)
+    def __init__(self, eof):
+        super().__init__()
         self.eof = eof
         self.inputlog = Path('logs') / 'input.in'
         if self.inputlog.exists():
@@ -99,9 +97,9 @@ class UserClient(UMClient):
 if __name__ == '__main__':
     with Path('logs/default.out').open('wb') as f:
         um = UniversalMachine(Path('umix.umz').read_bytes())
-        client = UserClient('EOU', f)
-        client.run(um)
+        client = UserClient('EOU')
+        client.run(um, f)
 
         um = UniversalMachine(Path('umix.umz').read_bytes())
-        client = FileClient(Path('logs/input.in'), f)
-        client.run(um)
+        client = FileClient(Path('logs/input.in'))
+        client.run(um, f)

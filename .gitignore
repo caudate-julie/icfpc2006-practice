@@ -13,9 +13,10 @@ htmlcov
 
 # .umz and in/out files
 *.umz
-/*.in
-/*.out
-logs
+**/*.out
+logs/*
+!*.in
+logs/input.in
 
 # auxiliary
 /TODO.txt

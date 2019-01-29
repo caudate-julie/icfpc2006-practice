@@ -13,10 +13,11 @@ def run_user():
     client = UserClient('EOF')
     client.run(um)
 
-def run(clientlist):
+def run(clientlist, outfilepath):
     um = UniversalMachine(pathlib.Path('umix.umz').read_bytes())
-    for client in clientlist:
-        client.run(um)
+    with outfilepath.open('wb') as f:
+        for client in clientlist:
+            client.run(um, f)
 
 
 # all lines that match score pattern are collected in logs/score.txt and summed up
@@ -47,6 +48,6 @@ def collect_score():
 
 
 if __name__ == '__main__':
-    clientlist = [UserClient('EOU')]
-    run(clientlist)
+    clientlist = [FileClient(Path('logs/guest.in')), UserClient('EOU')]
+    run(clientlist, Path('logs/guest.out'))
     collect_score()
