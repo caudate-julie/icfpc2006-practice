@@ -8,10 +8,14 @@ class LexemeType(Enum):
     FLOAT_NUMERAL = auto()      # get_numeral
     OPERATOR = auto()           # get_operator
     BRACKET = auto()            # get_bracket
+    NEWLINE = auto()
+    EOF = auto()
 
 keywords = ['if']
-operators = ['+', '-', '*', '/', '=', '+=', '-=', '*=', '/=']
+operators = ['+', '-', '*', '/', '=', '+=', '-=', '*=', '/=', '.', '&&']
 brackets = '(){}[]'
+whitespaces = ' \n\t\r'
+
 Lexeme = namedtuple('Lexeme', ['type', 'value'])
 
 class LexerError(Exception):
@@ -37,11 +41,15 @@ class Lexer:
             elif c in brackets:
                 self.lexemes.append(self.get_bracket())
             # # TODO: whitespaces, comments, quotes, non-numerical dots
-            elif c == ' ':
+            elif c == '\n':
+                self.lexemes.append(Lexeme(type=LexemeType.NEWLINE, value=None))
+                self.index += 1
+            elif c in whitespaces:
                 # TODO: stub!
                 self.index += 1
             else:
                 self.lexemes.append(self.get_operator())
+        self.lexemes.append(Lexeme(type=LexemeType.EOF, value=None))
         return self.lexemes
 
 
@@ -60,13 +68,15 @@ class Lexer:
             c = self.current()
             if c == '.':
                 if not is_integer:
-                    raise LexerError(f'Cannot parse second point in {"".join(result)}.')
+                    raise LexerError('cannot parse numeral')
                 is_integer = False
                 
             if c.isdigit() or c == '.':
                 result.append(c)
                 self.index += 1
-                        
+            
+            elif c.isalpha() or c == '_':
+                raise LexerError('cannot parse numeral')
             # TODO : exponential?
             else:
                 break
@@ -124,7 +134,7 @@ class Lexer:
             self.index += 1
 
         if candidate is None:
-            raise LexerError(f'no operator matches {pattern!r}')
+            raise LexerError(f'operator not found')
         self.index -= (len(pattern) - len(candidate))
         return Lexeme(type=LexemeType.OPERATOR, value = candidate)
 
