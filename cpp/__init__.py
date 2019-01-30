@@ -20,7 +20,7 @@ def changed_cur_dir(path):
 
 def check_updates():
     project_dir = pathlib.Path(__file__).parent.parent.absolute()
-    command = r'cl /std:c++17 /EHsc /LD /MDd /O2 um_emulator.cpp C:\Python37\libs\python37.lib /Feum_emulator.pyd /I C:\Python37\include'
+    command = r'cl /std:c++17 /EHsc /LD /O2 um_emulator.cpp C:\Python37\libs\python37.lib /Feum_emulator.pyd /I C:\Python37\include'
 
     with changed_cur_dir(project_dir / 'cpp'):
         last_cpp_edit = os.stat('um_emulator.cpp').st_mtime

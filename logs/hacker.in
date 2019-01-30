@@ -1,8 +1,8 @@
 guest
+mail
 cd code
-
-
-
+rm hack.bas
+/bin/umodem hack.bas STOP
 V        REM  +------------------------------------------------+
 X        REM  | HACK.BAS      (c) 19100   fr33 v4r14bl3z       |
 XV       REM  |                                                |
@@ -81,7 +81,7 @@ CCCLXXV  words(LI) = "zephyr"
 CCCLXXX  words(LII) = "zeppelin"
 CCCLXXXV words(LIII) = "zxcvbnm"
 CCCXC    REM try each password
-CCCXCV   PRINT "attempting hack with " + pwdcount + " passwords " + CHR(X)
+CCCXCV   REM PRINT "attempting hack with " + pwdcount + " passwords " + CHR(X)
 CD       DIM i AS INTEGER
 CDV      i = I
 CDX      IF CHECKPASS(username, words(i)) THEN GOTO CDXXX
@@ -101,8 +101,31 @@ CDLXXV   REM  passwords often take the form
 CDLXXX   REM    dictwordDD
 CDLXXXV  REM  where DD is a two-digit decimal number. try these next:
 CDXC     i = I
-CDXCV    DIM j AS INTEGER
-
-
-
-
+D        DIM j AS INTEGER
+DV       j = XLVIII
+DX       DIM k AS INTEGER
+DXV      k = XLVIII
+DXX      IF CHECKPASS(username, words(i) + CHR(j) + CHR(k)) THEN GOTO DLX
+DXXV     k = k + I
+DXXX     IF k < LVIII THEN GOTO DXX
+DXXXV    j = j + I
+DXL      IF j < LVIII THEN GOTO DXV
+DXLV     i = i + I
+DXLVI    IF i > pwdcount THEN GOTO DL
+DXLVII   GOTO DV
+DL       PRINT "no numerical matches for user " + username + CHR(X)
+DLV      END
+DLX      PRINT "found match!! for user " + username + CHR(X)
+DLXV     PRINT "password: " + words(i) + CHR(j) + CHR(k) + CHR(X)
+DLXX     END
+STOP
+/bin/qbasic hack.bas
+./hack.exe ftd
+./hack.exe knr
+./hack.exe gardener
+./hack.exe ohmega
+./hack.exe yang
+./hack.exe howie
+./hack.exe hmonk
+./hack.exe bbarker
+exit

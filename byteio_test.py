@@ -5,6 +5,7 @@ from cpp.um_emulator import UniversalMachine
 from pathlib import Path
 import io
 import sys
+import pytest
 
 def test_io_smoke():
     um = UniversalMachine(Path('umix.umz').read_bytes())
@@ -30,6 +31,7 @@ def test_io_sequential():
         if c is None: break
         output.writebyte(c)
     assert outstring.getvalue() == 'hello world!\n'
+
 
 if __name__ == '__main__':
     test_io_smoke()

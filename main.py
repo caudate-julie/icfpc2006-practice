@@ -1,4 +1,4 @@
-from clients import *
+import clients
 from cpp.um_emulator import UniversalMachine
 
 from time import time
@@ -11,12 +11,18 @@ import sys
 
 def run_user():
     um = UniversalMachine(pathlib.Path('umix.umz').read_bytes())
-    with (Path('logs/default.out').open('wb') as f, 
-          Path('logs/input.in').open('wb') as g):
-        logwriter = TextReader(f)
+    with Path('logs/default.out').open('wb') as f, \
+          Path('logs/input.in').open('wb') as g:
+        logwriter = ByteWriter(f)
         run(um,
-            umin=ForkReader(TextReader(sys.stdin), [logwriter, TextReader(g)]),
+            umin=ForkReader(TextReader(sys.stdin), [logwriter, ByteWriter(g)]),
             umout=ForkWriter(TextWriter(sys.stdout), logwriter))
+
+
+def run_files(filenames, outfile):
+
+run howie
+
 
 
 # all lines that match score pattern are collected in logs/score.txt and summed up
@@ -50,12 +56,12 @@ def collect_score():
 
 
 if __name__ == '__main__':
-    with Path('logs/guest.out').open('w') as f:
-        logwriter = TextWriter(f)
-        umin = ForkReader(TextReader(sys.stdin), [logwriter])
-        umout = ForkWriter(TextWriter(sys.stdout), logwriter)
+    # with Path('logs/guest.out').open('w') as f:
+    #     logwriter = TextWriter(f)
+    #     umin = ForkReader(TextReader(sys.stdin), [logwriter])
+    #     umout = ForkWriter(TextWriter(sys.stdout), logwriter)
         
-        um = UniversalMachine(Path('umix.umz').read_bytes())
-        run(um, umin=umin, umout=umout)
-
+    #     um = UniversalMachine(Path('umix.umz').read_bytes())
+    #     run(um, umin=umin, umout=umout)
+    run_user()
     collect_score()
