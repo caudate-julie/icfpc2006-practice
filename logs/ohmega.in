@@ -1,0 +1,13 @@
+ohmega
+bidirectional
+ls
+plus.2d
+cat plus.2d
+cat aspects.spec
+cat raytrace.spec
+cat reverse.spec
+cat mult.spec
+cat README
+verify
+2d
+exit

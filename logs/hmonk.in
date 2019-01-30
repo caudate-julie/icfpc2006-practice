@@ -1,0 +1,9 @@
+hmonk
+COMEFROM
+ls
+cat README
+advise
+cat advise.man
+cat arith.adv
+cat arith.tests
+exit
