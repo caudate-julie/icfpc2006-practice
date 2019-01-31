@@ -1,2 +1,71 @@
 howie
 xyzzy
+ls
+cat README
+adventure
+switch ML
+help
+help go
+help take
+help drop
+help incinerate
+help combine
+help use
+help examine
+help show
+x
+x pamphlet
+x manifesto
+go north
+x bolt
+x spring
+x button
+x processor
+x pill
+x radio
+x cache
+x transistor
+x antenna
+x screw
+x motherboard
+x A-1920-IXB
+x transistor
+x keypad
+take bolt
+take spring
+inc spring
+take button
+take processor
+take pill
+inc pill
+take radio
+take cache
+combine processor with cache
+take blue transistor
+combine radio with blue transistor
+take antenna
+inc antenna
+take screw
+take motherboard
+combine motherboard with screw
+take A-1920-IXB
+combine A-1920-IXB with radio
+combine A-1920-IXB with processor
+combine A-1920-IXB with bolt
+take red transistor
+combine A-1920-IXB with red transistor
+combine motherboard with A-1920-IXB
+take keypad
+combine keypad with button
+combine keypad with motherboard
+go south
+take pamphlet
+inc pamphlet
+take manifesto
+use keypad
+x
+take /etc/passwd
+inc /etc/passwd
+take note
+inc note
+take downloader
