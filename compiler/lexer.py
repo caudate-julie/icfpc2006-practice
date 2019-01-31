@@ -1,5 +1,6 @@
-from collections import namedtuple
+from dataclasses import dataclass
 from enum import Enum, auto
+from typing import Union
 
 class LexemeType(Enum):
     KEYWORD = auto()            # get_identifier
@@ -16,7 +17,12 @@ operators = ['+', '-', '*', '/', '=', '+=', '-=', '*=', '/=', '.', '&&']
 brackets = '(){}[]'
 whitespaces = ' \n\t\r'
 
-Lexeme = namedtuple('Lexeme', ['type', 'value', 'position'])
+@dataclass
+class Lexeme:
+    type: LexemeType
+    value: Union[None, int, float, str]
+    position: int
+
 
 class LexerError(Exception):
     def __init__(self, arg, position):
