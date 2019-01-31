@@ -1,3 +1,5 @@
+from terminals import *
+
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Union
@@ -12,10 +14,11 @@ class LexemeType(Enum):
     NEWLINE = auto()
     EOF = auto()
 
-keywords = ['if']
-operators = ['+', '-', '*', '/', '=', '+=', '-=', '*=', '/=', '.', '&&']
-brackets = '(){}[]'
-whitespaces = ' \n\t\r'
+    def is_term(self):
+        return self == LexemeType.FLOAT_NUMERAL \
+            or self == LexemeType.INTEGER_NUMERAL \
+            or self == LexemeType.IDENTIFIER \
+            or self == LexemeType.KEYWORD
 
 @dataclass
 class Lexeme:
