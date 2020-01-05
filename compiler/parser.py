@@ -17,6 +17,8 @@ class ASTNode:
 
     # Both methods return a new tree with current tree as
     # left/right child; current tree, if new root is None
+
+    # TODO: derive (min/max) starts and ends from children
     def sink_left(self, root: Optional['ASTBinary']):
         if root is None:
             return self
