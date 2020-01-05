@@ -6,3 +6,8 @@ to run tests:
 or
 > pytest compiler/
 
+
+RUN FILE
+
+> cd ...icfpc2006
+> py -m compiler.parser

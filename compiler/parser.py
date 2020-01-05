@@ -8,11 +8,12 @@ from typing import Any, Optional
 @dataclass
 class ASTNode:
     value: Any
-    position: int
+    starts: int
+    ends: int
     
     @classmethod
     def from_lexeme(cls, x: Lexeme):
-        return cls(value = x.value, position = x.position)
+        return cls(value = x.value, starts = x.starts, ends = x.ends)
 
     # Both methods return a new tree with current tree as
     # left/right child; current tree, if new root is None

@@ -2,6 +2,7 @@ import clients
 from cpp.um_emulator import UniversalMachine
 from byteio import *
 
+import io
 import argparse
 import sys
 import re
@@ -37,6 +38,13 @@ def run_file(filename):
                     umout=doublewriter)
 
 
+def run_compiled(umcode: bytearray)
+    um = UniversalMachine(umcode)
+    output = io.StringIO()
+    clients.run(um,
+            umin=BaseReader(),
+            umout=TextWriter(output))
+    return output.getvalue()
 
 
 # all lines that match score pattern are collected in logs/score.txt and summed up
@@ -89,3 +97,5 @@ if __name__ == '__main__':
             run_file(args.name)
     if args.score:
         collect_score()
+
+
