@@ -1,5 +1,5 @@
-from lexer import *
-from terminals import *
+from .lexer import *
+from .grammar import *
 
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -33,13 +33,34 @@ class ASTBinary(ASTNode):
     left: ASTNode = None
     right: ASTNode = None
 
+    def unparse(self):
+        left_exp = self.left.unparse()
+        right_exp = self.right.unparse()
+        # TODO: associativity
+        # TODO: unary
+        if isinstance(self.left, ASTBinary) and level(self.left.value) < level(self.value):
+            left_exp = '(' + left_exp + ')'
+        if isinstance(self.right, ASTBinary) and level(self.right.value) < level(self.value):
+            right_exp = '(' + right_exp + ')'
+        return left_exp + ' ' + self.value + ' ' + right_exp
+
+
 @dataclass
 class ASTUnary(ASTNode):
     child: ASTNode = None
 
+    def unparse(self):
+        child_exp = self.child.unparse()
+        if lower_precedence(self.child.value, self.value):
+            child_exp = '(' + child_exp + ')'
+        return self.value + ' ' + child_exp  
+
 @dataclass
 class ASTLeaf(ASTNode):
-    pass
+    # no additional fields
+
+    def unparse(self):
+        return str(self.value)
 
 # --------------------------------------------- #
 
@@ -94,6 +115,8 @@ class Parser:
             
             node = ASTBinary.from_lexeme(self.take())
             ast = ast.sink_left(node)
+        # exception - no operand for binary operator
+        
 
 
     # TERM = <numeral> | <identifier> | (SUMMATION)
@@ -114,9 +137,11 @@ class Parser:
         return ASTLeaf.from_lexeme(lex)
 
 
+
 if __name__ == '__main__':
-    s = 'y = 26 + 5 * x'
+    s = 'y = (26 + 5) * x'
     lexemes = Lexer(s).parse()
     print(lexemes)
     ast = Parser(lexemes).parse()
     print(ast)
+    print(ast.unparse())

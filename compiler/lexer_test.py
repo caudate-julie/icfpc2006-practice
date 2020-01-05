@@ -58,12 +58,12 @@ def test_position():
     s = 'a+b_1\n(45.6'
     lexer = Lexer(s)
     r = lexer.parse()
-    assert s[r[0].position : r[0].position + 1] == 'a'
-    assert s[r[1].position : r[1].position + 1] == '+'
-    assert s[r[2].position : r[2].position + len('b_1')] == 'b_1'
-    assert s[r[3].position : r[3].position + 1] == '\n'
-    assert s[r[4].position : r[4].position + 1] == '('
-    assert s[r[5].position : r[5].position + len('45.6')] == '45.6'
+    assert s[r[0].starts : r[0].ends] == 'a'
+    assert s[r[1].starts : r[1].ends] == '+'
+    assert s[r[2].starts : r[2].ends] == 'b_1'
+    assert s[r[3].starts : r[3].ends] == '\n'
+    assert s[r[4].starts : r[4].ends] == '('
+    assert s[r[5].starts : r[5].ends] == '45.6'
     
     
 

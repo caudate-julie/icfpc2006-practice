@@ -1,4 +1,4 @@
-from terminals import *
+from .grammar import *
 
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -24,13 +24,18 @@ class LexemeType(Enum):
 class Lexeme:
     type: LexemeType
     value: Union[None, int, float, str]
-    position: int
+    starts: int
+    ends: int
 
+# --------------------------------------------- #
 
 class LexerError(Exception):
-    def __init__(self, arg, position):
+    def __init__(self, arg, starts, ends):
         self.message = arg
-        self.position = position
+        self.starts = starts
+        self.ends = ends
+
+# --------------------------------------------- #
 
 class Lexer:
     def __init__(self, code):
@@ -54,16 +59,18 @@ class Lexer:
             elif c == '\n':
                 self.lexemes.append(Lexeme(type=LexemeType.NEWLINE, 
                                            value=None, 
-                                           position=self.index))
+                                           starts=self.index,
+                                           ends=self.index + 1))
                 self.index += 1
             elif c in whitespaces:
-                # TODO: stub!
+                # TODO: it's a stub!
                 self.index += 1
             else:
                 self.lexemes.append(self.get_operator())
         self.lexemes.append(Lexeme(type=LexemeType.EOF,
                                    value=None, 
-                                   position=self.index))
+                                   starts=self.index,
+                                   ends=self.index))
         return self.lexemes
 
 
@@ -77,13 +84,13 @@ class Lexer:
     def get_numeral(self) -> Lexeme:
         result = []
         is_integer = True
-        position = self.index
+        starts = self.index
 
         while self.index < len(self.code):
             c = self.current()
             if c == '.':
                 if not is_integer:
-                    raise LexerError('cannot parse numeral', self.index)
+                    raise LexerError('cannot parse numeral', starts, self.index)
                 is_integer = False
                 
             if c.isdigit() or c == '.':
@@ -91,8 +98,8 @@ class Lexer:
                 self.index += 1
             
             elif c.isalpha() or c == '_':
-                raise LexerError('cannot parse numeral', self.index)
-            # TODO : exponential?
+                raise LexerError('cannot parse numeral', starts, self.index)
+            # TODO : exponential
             else:
                 break
 
@@ -101,17 +108,19 @@ class Lexer:
         if is_integer:
             return Lexeme(type=LexemeType.INTEGER_NUMERAL, 
                           value=int(result), 
-                          position=position)
+                          starts=starts,
+                          ends=self.index)
         else:
             return Lexeme(type=LexemeType.FLOAT_NUMERAL, 
                           value=float(result), 
-                          position=position)
+                          starts=starts,
+                          ends=self.index)
 
     
     def get_identifier(self):
-        assert not self.current().isdigit()
+        assert self.current().isalpha() or self.current() == '_'
         result = []
-        position = self.index
+        starts = self.index
 
         while self.index < len(self.code):
             c = self.current()
@@ -124,27 +133,31 @@ class Lexer:
         if result in keywords:
             return Lexeme(type=LexemeType.KEYWORD,
                           value=result, 
-                          position=position)
+                          starts=starts,
+                          ends=self.index)
         else:
             return Lexeme(type=LexemeType.IDENTIFIER,
                           value=result, 
-                          position=position)
+                          starts=starts,
+                          ends=self.index)
 
 
     def get_bracket(self) -> Lexeme:
+        assert self.current() in brackets, self.current()
         result = Lexeme(type=LexemeType.BRACKET, 
                         value=self.current(), 
-                        position=self.index)
+                        starts=self.index,
+                        ends=self.index + 1)
         self.index += 1
         return result
 
 
     def get_operator(self) -> Lexeme:
-        size = 1
+        size = 1 #len(pattern)
         is_prefix = True
         candidate = None
         pattern = ''
-        position = self.index
+        starts = self.index
 
         while self.index < len(self.code) and is_prefix:
             is_prefix = False
@@ -161,11 +174,12 @@ class Lexer:
             self.index += 1
 
         if candidate is None:
-            raise LexerError(f'operator not found', self.index)
+            raise LexerError(f'operator not found', starts, self.index)
         self.index -= (len(pattern) - len(candidate))
         return Lexeme(type=LexemeType.OPERATOR, 
-                      value = candidate, 
-                      position=position)
+                      value=candidate, 
+                      starts=starts,
+                      ends=self.index)
 
 # -------------------------------------------
 
