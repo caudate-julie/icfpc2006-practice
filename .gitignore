@@ -21,3 +21,4 @@ logs/input.in
 # auxiliary
 /TODO.txt
 /auxiliary/*
+/logs/bot.log

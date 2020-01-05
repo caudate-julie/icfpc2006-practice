@@ -51,4 +51,3 @@ take /etc/passwd
 inc /etc/passwd
 take note
 inc note
-switch xml

@@ -1,0 +1,179 @@
+switch reading
+x
+take uploader
+go east
+go east
+go east
+go south
+switch xml
+show
+switch reading
+take tea-green T-9887-OKW
+take chartreuse N-5065-ALO
+take dim-gray X-6458-TNF
+take scarlet J-9247-IWC
+combine scarlet J-9247-IWC with dim-gray X-6458-TNF
+combine chartreuse N-5065-ALO with scarlet J-9247-IWC
+take mustard D-4292-HMN
+take turquoise N-4832-NAJ
+take turquoise F-6678-DTT
+combine chartreuse N-5065-ALO with turquoise F-6678-DTT
+take celadon T-9887-OKW
+inc celadon T-9887-OKW
+take burnt-orange T-9887-OKW
+combine mustard D-4292-HMN with burnt-orange T-9887-OKW
+combine chartreuse N-5065-ALO with mustard D-4292-HMN
+combine chartreuse N-5065-ALO with turquoise N-4832-NAJ
+take cadet-blue T-9887-OKW
+combine chartreuse N-5065-ALO with cadet-blue T-9887-OKW
+take pastel-green F-6678-DTT
+combine chartreuse N-5065-ALO with pastel-green F-6678-DTT
+take prussian-blue X-6458-TNF
+inc prussian-blue X-6458-TNF
+take magenta X-6458-TNF
+inc magenta X-6458-TNF
+take safety-orange F-6678-DTT
+inc safety-orange F-6678-DTT
+take imported B-5065-YQM
+inc imported B-5065-YQM
+take puce X-6458-TNF
+inc puce X-6458-TNF
+take water-logged F-6678-DTT
+inc water-logged F-6678-DTT
+take thistle-colored X-6458-TNF
+inc thistle-colored X-6458-TNF
+take gamboge T-9887-OKW
+combine chartreuse N-5065-ALO with gamboge T-9887-OKW
+combine chartreuse N-5065-ALO with tea-green T-9887-OKW
+take sky-blue T-9887-OKW
+inc sky-blue T-9887-OKW
+take navy-blue MOSFET
+inc navy-blue MOSFET
+take olive-green N-5065-ALO
+take pastel-pink Z-4832-PUL
+take seashell D-1403-UXS
+inc seashell D-1403-UXS
+take peach-yellow D-1403-UXS
+inc peach-yellow D-1403-UXS
+take crimson V-0010-XGX
+take cyan J-9247-IWC
+inc cyan J-9247-IWC
+take puce H-0010-ZBZ
+inc puce H-0010-ZBZ
+take chocolate-colored D-1403-UXS
+combine pastel-pink Z-4832-PUL with chocolate-colored D-1403-UXS
+combine pastel-pink Z-4832-PUL with crimson V-0010-XGX
+combine pastel-pink Z-4832-PUL with olive-green N-5065-ALO
+take pale-brown V-9247-KRE
+inc pale-brown V-9247-KRE
+take heliotrope D-1403-UXS
+inc heliotrope D-1403-UXS
+take crimson MOSFET
+combine crimson MOSFET with pastel-pink Z-4832-PUL
+combine crimson MOSFET with chartreuse N-5065-ALO
+combine uploader with MOSFET
+go north
+go north
+go west
+switch xml
+show
+switch reading
+take battery
+take buff F-6678-DYP
+inc buff F-6678-DYP
+take olive-green R-4292-FWH
+inc olive-green R-4292-FWH
+take green D-4832-HUX
+inc green D-4832-HUX
+take prussian-blue P-1623-WEU
+take black X-9887-GKK
+inc black X-9887-GKK
+take reciprocating H-9887-MUQ
+combine battery with reciprocating H-9887-MUQ
+take bright-violet T-4292-BHD
+combine prussian-blue P-1623-WEU with bright-violet T-4292-BHD
+take flax D-4292-HRJ
+inc flax D-4292-HRJ
+take yellow Z-1623-COC
+combine yellow Z-1623-COC with prussian-blue P-1623-WEU
+take goldenrod X-0010-TVP
+inc goldenrod X-0010-TVP
+take forest-green F-6678-DYP
+inc forest-green F-6678-DYP
+take sky-blue N-1623-ATY
+inc sky-blue N-1623-ATY
+take rotating H-6678-ZJL
+inc rotating H-6678-ZJL
+take sienna T-6678-BEN
+inc sienna T-6678-BEN
+take heliotrope D-5065-UGE
+inc heliotrope D-5065-UGE
+take sea-green N-1623-ATY
+inc sea-green N-1623-ATY
+take ochre D-4292-HRJ
+inc ochre D-4292-HRJ
+take cream Z-1623-COC
+inc cream Z-1623-COC
+take powder-blue T-6678-BEN
+inc powder-blue T-6678-BEN
+take gold N-4832-NFF
+take burnt-umber V-0010-XLT
+take bronze J-9247-ICW
+inc bronze J-9247-ICW
+take selective-yellow N-4832-NFF
+inc selective-yellow N-4832-NFF
+take peach-puff F-6678-DYP
+inc peach-puff F-6678-DYP
+take bright-violet N-4832-NFF
+inc bright-violet N-4832-NFF
+take moccasin N-4832-NFF
+inc moccasin N-4832-NFF
+take royal-blue J-9247-ICW
+combine yellow Z-1623-COC with royal-blue J-9247-ICW
+combine yellow Z-1623-COC with burnt-umber V-0010-XLT
+take pale-mauve R-4292-FWH
+inc pale-mauve R-4292-FWH
+take lavender-blush N-6458-NIT
+inc lavender-blush N-6458-NIT
+take mint-green J-9887-IFM
+inc mint-green J-9887-IFM
+take olive-drab N-1623-ATY
+inc olive-drab N-1623-ATY
+take violet F-4292-DCF
+inc violet F-4292-DCF
+take gray30 X-9247-GHU
+inc gray30 X-9247-GHU
+take pale-blue V-9887-KAO
+inc pale-blue V-9887-KAO
+take steel-blue N-4832-NFF
+inc steel-blue N-4832-NFF
+take pale-magenta N-1623-ATY
+inc pale-magenta N-1623-ATY
+take pale-cornflower-blue X-9247-GHU
+inc pale-cornflower-blue X-9247-GHU
+take low-carb N-4832-NFF
+inc low-carb N-4832-NFF
+take peach-orange P-5065-WBG
+inc peach-orange P-5065-WBG
+take green L-6458-RXX
+inc green L-6458-RXX
+take eggplant Z-1623-COC
+combine battery with eggplant Z-1623-COC
+combine battery with yellow Z-1623-COC
+take camouflage-green J-9247-ICW
+combine battery with camouflage-green J-9247-ICW
+take violet-eggplant N-4832-NFF
+inc violet-eggplant N-4832-NFF
+take pear N-4832-NFF
+inc pear N-4832-NFF
+take navy-blue J-9247-ICW
+inc navy-blue J-9247-ICW
+take burgundy F-6678-DYP
+combine battery with burgundy F-6678-DYP
+combine battery with gold N-4832-NFF
+combine uploader with battery
+go north
+go east
+switch xml
+show
+switch reading
