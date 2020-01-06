@@ -10,6 +10,7 @@ from pathlib import Path
 from abc import abstractmethod
 from typing import Optional
 
+
 # --------------- General Run UM method ---------------------- #
 
 def run(um: UniversalMachine, *, umin: BaseReader, umout: BaseWriter):
@@ -58,22 +59,26 @@ def run_file(filename):
         doublewriter = ForkWriter(logwriter, conswriter)
         # run file
         run(um,
-                    umin=ForkReader(TextReader(infile), [doublewriter]),
-                    umout=doublewriter)
+            umin=ForkReader(TextReader(infile), [doublewriter]),
+            umout=doublewriter)
         run(um,
-                    umin=ForkReader(TextReader(sys.stdin),
-                                    [logwriter, TextWriter(keyboard)]),
-                    umout=doublewriter)
+            umin=ForkReader(TextReader(sys.stdin),
+                            [logwriter, TextWriter(keyboard)]),
+            umout=doublewriter)
 
 
-def run_compiled(umcode: bytearray):
+def run_compiled(umcode: bytearray, binary):
     um = UniversalMachine(umcode)
-    output = io.StringIO()
+    output = io.BytesIO() if binary else io.StringIO()
+    Writer = ByteWriter if binary else TextWriter
+
     run(um,
-            umin=BaseReader(),
-            umout=TextWriter(output))
+        umin=BaseReader(),
+        umout=Writer(output))
     return output.getvalue()
 
+
+# ------------------ Scoring ------------------------ #
 
 # all lines that match score pattern are collected in logs/score.txt and summed up
 def collect_score():

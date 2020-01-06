@@ -279,7 +279,7 @@ def encode_instructions(insns: List[AsmInsn]):
     umcode = bytearray()
     for insn in insns:
         umcode += insn.encode()
-    return umcode
+    return bytes(umcode)
 
 
 if __name__ == '__main__':

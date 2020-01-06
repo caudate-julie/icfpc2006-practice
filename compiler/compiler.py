@@ -1,60 +1,70 @@
 from .parser import *
-from .precommands import *
+from . import asm
 
 from typing import List
 from functools import singledispatch
 
-free_registers = [True] * 8
+
 class NoFreeRegisterError(Exception):
     def __init__(self):
         self.message = 'no available registers'
 
+class Context:
+    def __init__(self):
+        self.registers = [True] * 8
 
-def get_free_register():
-    if not any(free_registers):
-        raise NoFreeRegisterError()
-
-    i = free_registers.index(True)
-    free_registers[i] = False
-    return i
+    def get_register(self):
+        if not any(self.registers):
+            raise NoFreeRegisterError()
+        i = self.registers.index(True)
+        self.registers[i] = False
+        return i
 
 
 @singledispatch
-def get_precommand(ast: ASTNode):
+def get_asm_insn(ast: ASTNode, context: Context):
     raise NotImplementedError()
 
 
-@get_precommand.register
-def _(ast: ASTLeaf):
-    index = get_free_register()
-    return [OrthographyCmd(index, ast.value)]
+@get_asm_insn.register
+def _(ast: ASTLeaf, context: Context):
+    index = context.get_register()
+    return [asm.OrthographyInsn(index, ast.value)]
 
 
-@get_precommand.register
-def _(ast: ASTBinary) -> List[PreCommand]:
-    commands_left = get_precommand(ast.left)
-    commands_right = get_precommand(ast.right)
+@get_asm_insn.register
+def _(ast: ASTBinary, context: Context) -> List[asm.AsmInsn]:
+    insns_left = get_asm_insn(ast.left, context)
+    insns_right = get_asm_insn(ast.right, context)
 
-    A = get_free_register()
-    B = commands_left[-1].result
-    C = commands_right[-1].result
+    A = context.get_register()
+    B = insns_left[-1].result_stored()
+    C = insns_right[-1].result_stored()
     if ast.value == '+':
-        cmd = AdditionCmd(A, B, C)
+        insn = asm.AdditionInsn(A, B, C)
     elif ast.value == '*':
-        cmd = MultiplicationCmd(A, B, C)
+        insn = asm.MultiplicationInsn(A, B, C)
     else:
         assert False, ast.value
 
-    free_registers[B] = free_registers[C] = True
-    return commands_left + commands_right + [cmd]
+    context.registers[B] = context.registers[C] = True
+    return insns_left + insns_right + [insn]
 
 
 def wrap_in_print(insns):
-    return insns + [OutputCmd(insns[-1].result)]
+    return insns + [asm.OutputInsn(insns[-1].result_stored())]
+
+
+def compile(code: str):
+    ast = Parser(Lexer(code).parse()).parse()
+    insns = get_asm_insn(ast, Context())
+    insns = wrap_in_print(insns)  # TODO: remove
+    umcode = asm.encode_instructions(insns)
+    return umcode
 
 
 if __name__ == '__main__':
     s = '(26 + 5) * 2'
     ast = Parser(Lexer(s).parse()).parse()
-    for insn in wrap_in_print(get_precommand(ast)):
+    for insn in wrap_in_print(get_asm_insn(ast, Context())):
         print (insn)
