@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 
 instructions = {}
 regnames = [':A:', ':B:', ':C:', ':D:', ':E:', ':F:', ':G:', ':H:']
@@ -26,15 +27,6 @@ def decode_registers(umcode):
     C = regs & 7
     return (A, B, C)
 
-
-def decode_instruction(umcode):
-    assert len(umcode) == 4, len(umcode)
-    code = umcode[0] >> 4
-    if code == 14 or code == 15:
-        raise IllegalInstructionError(code)
-    return instructions[code].decode(umcode)
-
-
 class AsmInsn:
     def __init__(self, A, B, C):
         self.A = A
@@ -43,10 +35,18 @@ class AsmInsn:
 
     def encode(self):
         int_code = (self.code << 28) | (self.A << 6) | (self.B << 3) | self.C
-        return int_code.to_bytes(4, byteorder='b')
+        return int_code.to_bytes(4, byteorder='big')
+
+    @staticmethod
+    def decode(umcode: bytes):
+        assert len(umcode) == 4, len(umcode)
+        code = umcode[0] >> 4
+        if code == 14 or code == 15:
+            raise IllegalInstructionError(code)
+        return instructions[code]._decode(umcode)
 
     @classmethod
-    def decode(cls, umcode: bytes):
+    def _decode(cls, umcode: bytes):
         A, B, C = decode_registers(umcode)
         return cls(A, B, C)
 
@@ -138,7 +138,7 @@ class HaltInsn(AsmInsn):
         return None
 
     @classmethod
-    def decode(cls, umcode: bytes):
+    def _decode(cls, umcode: bytes):
         return cls()
 
 
@@ -157,7 +157,7 @@ class AllocationInsn(AsmInsn):
         return self.B
 
     @classmethod
-    def decode(cls, umcode: bytes):
+    def _decode(cls, umcode: bytes):
         _, B, C = decode_registers(umcode)
         return cls(B, C)
 
@@ -176,7 +176,7 @@ class AbandonmentInsn(AsmInsn):
         return None
 
     @classmethod
-    def decode(cls, umcode: bytes):
+    def _decode(cls, umcode: bytes):
         _, _, C = decode_registers(umcode)
         return cls(C)
 
@@ -194,7 +194,7 @@ class OutputInsn(AsmInsn):
         return None
 
     @classmethod
-    def decode(cls, umcode: bytes):
+    def _decode(cls, umcode: bytes):
         _, _, C = decode_registers(umcode)
         return cls(C)
 
@@ -212,7 +212,7 @@ class InputInsn(AsmInsn):
         return self.C
 
     @classmethod
-    def decode(cls, umcode: bytes):
+    def _decode(cls, umcode: bytes):
         _, _, C = decode_registers(umcode)
         return cls(C)
 
@@ -232,7 +232,7 @@ class LoadProgramInsn(AsmInsn):
         return None
 
     @classmethod
-    def decode(cls, umcode: bytes):
+    def _decode(cls, umcode: bytes):
         _, B, C = decode_registers(umcode)
         return cls(B, C)
 
@@ -254,32 +254,33 @@ class OrthographyInsn(AsmInsn):
 
     def encode(self):
         umcode = (self.code << 28) | (self.A << 25) | self.value
-        return umcode.to_bytes(4, byteorder='b')
+        return umcode.to_bytes(4, byteorder='big')
 
     @classmethod
-    def decode(cls, umcode: bytes):
-        assert len(uncode) == 4
+    def _decode(cls, umcode: bytes):
+        assert len(umcode) == 4
         int_code = int.from_bytes(umcode, byteorder='big', signed=False)
         A = (int_code >> 25) & 7
-        value = umcode & ((1 << 25) - 1)
+        value = int_code & ((1 << 25) - 1)
         return cls(A, value)
 
 
-# @register_instruction(14)
-# @register_instruction(15)
-# class IllegalInsn(AsmInsn):
-#     # fail_operation("Illegal operation");
-#     def __init__(self):
-#         super().__init__(0, 0, 0)
+def decode_instructions(umcode: bytes):
+    assert len(umcode) % 4 == 0, len(umcode)
+    insns = []
+    i = 0
+    while i < len(umcode):
+        insns.append(AsmInsn.decode(umcode[i : i + 4]))
+        i += 4
+    return insns
 
-#     def __str__(self):
-#         return 'Illegal operation code'
 
-#     def result_stored(self):
-#         return None
+def encode_instructions(insns: List[AsmInsn]):
+    umcode = bytearray()
+    for insn in insns:
+        umcode += insn.encode()
+    return umcode
 
-#     def encode(self):
-#         raise NotImplementedError()
 
 if __name__ == '__main__':
     print (instructions)
