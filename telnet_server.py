@@ -1,5 +1,5 @@
 from byteio import *
-from clients import run
+from run import run
 from cpp.um_emulator import UniversalMachine
 
 from pathlib import Path

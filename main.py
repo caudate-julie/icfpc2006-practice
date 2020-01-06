@@ -1,4 +1,4 @@
-import clients
+from run import *
 from cpp.um_emulator import UniversalMachine
 
 from time import time

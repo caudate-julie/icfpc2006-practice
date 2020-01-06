@@ -1,4 +1,3 @@
-import clients
 from cpp.um_emulator import UniversalMachine
 from byteio import *
 
@@ -8,13 +7,42 @@ import sys
 import re
 from collections import defaultdict
 from pathlib import Path
+from abc import abstractmethod
+from typing import Optional
+
+# --------------- General Run UM method ---------------------- #
+
+def run(um: UniversalMachine, *, umin: BaseReader, umout: BaseWriter):
+    while True:
+        # if um.state == UniversalMachine.State.ERROR:
+        #     # TODO
+        #     print(um.error_message)
+        #     return
+
+        if um.state == UniversalMachine.State.IDLE:
+            out = um.run()
+            for byte in out:
+                umout.writebyte(byte)
+            continue
+
+        if um.state == UniversalMachine.State.HALT:
+            return
+
+        assert um.state == UniversalMachine.State.WAITING
+
+        c = umin.readbyte()
+        if c is None: return
+        um.write_input(c)
+
+
+# ------------ Different Run UM configurations --------------- #
 
 def run_user():
     um = UniversalMachine(Path('umix.umz').read_bytes())
     with Path('logs/default.out').open('wb') as f, \
          Path('logs/input.in').open('wb') as g:
         logwriter = ByteWriter(f)
-        clients.run(um,
+        run(um,
             umin=ForkReader(TextReader(sys.stdin), [logwriter, ByteWriter(g)]),
             umout=ForkWriter(TextWriter(sys.stdout), logwriter))
 
@@ -29,19 +57,19 @@ def run_file(filename):
         conswriter = TextWriter(sys.stdout)
         doublewriter = ForkWriter(logwriter, conswriter)
         # run file
-        clients.run(um,
+        run(um,
                     umin=ForkReader(TextReader(infile), [doublewriter]),
                     umout=doublewriter)
-        clients.run(um,
+        run(um,
                     umin=ForkReader(TextReader(sys.stdin),
                                     [logwriter, TextWriter(keyboard)]),
                     umout=doublewriter)
 
 
-def run_compiled(umcode: bytearray)
+def run_compiled(umcode: bytearray):
     um = UniversalMachine(umcode)
     output = io.StringIO()
-    clients.run(um,
+    run(um,
             umin=BaseReader(),
             umout=TextWriter(output))
     return output.getvalue()
