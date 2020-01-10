@@ -67,7 +67,7 @@ def run_file(filename):
             umout=doublewriter)
 
 
-def run_compiled(umcode: bytearray, binary):
+def run_compiled(umcode: bytes, binary):
     um = UniversalMachine(umcode)
     output = io.BytesIO() if binary else io.StringIO()
     Writer = ByteWriter if binary else TextWriter
