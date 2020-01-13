@@ -12,24 +12,11 @@ class ASTNode:
     ends: int
     
     @classmethod
-    def from_lexeme(cls, x: Lexeme):
+    def from_lexeme(cls, x: Lexeme, *children):
         return cls(value = x.value, starts = x.starts, ends = x.ends)
-
-    # Both methods return a new tree with current tree as
-    # left/right child; current tree, if new root is None
+        # min (zzz, *(x.starts for x in children))
 
     # TODO: derive (min/max) starts and ends from children
-    def sink_left(self, root: Optional['ASTBinary']):
-        if root is None:
-            return self
-        root.left = self
-        return root
-    
-    def sink_right(self, root: Optional['ASTBinary']):
-        if root is None:
-            return self
-        root.right = self
-        return root
 
 @dataclass
 class ASTBinary(ASTNode):
@@ -104,22 +91,22 @@ class Parser:
 
     def parse_binary(self, level):
         assert self.index < len(self.lexemes)
-        ast = None
 
-        while self.peek().type != LexemeType.EOF:
-            if level == len(operator_levels):
-                return self.parse_atom()
+        if level == len(operator_levels):
+            return self.parse_atom()
 
-            term = self.parse_binary(level + 1)
-            ast = term.sink_right(ast)
+        ast = self.parse_binary(level + 1)
 
-            if self.peek().value not in operator_levels[level]:
-                return ast
-            
-            node = ASTBinary.from_lexeme(self.take())
-            ast = ast.sink_left(node)
-        # exception - no operand for binary operator
+        while self.peek().value in operator_levels[level]:
+            ast_left = ast
+            node = self.take()
+            ast_right = self.parse_binary(level + 1)
+            ast = ASTBinary.from_lexeme(node)
+            ast.left = ast_left
+            ast.right = ast_right  # !!! TODO
         
+        return ast
+        # exception - no operand for binary operator
 
 
     # TERM = <numeral> | <identifier> | (SUMMATION)
