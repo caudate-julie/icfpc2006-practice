@@ -1,5 +1,40 @@
 from .parser import *
 import pytest
+from textwrap import dedent
+
+
+def test_arithmetics():
+    s = '(26 + xyz) * (a3 + 4 * 6)'
+    expected = dedent('''\
+        Binary *
+          Binary +
+            Leaf 26
+            Leaf xyz
+          Binary +
+            Leaf a3
+            Binary *
+              Leaf 4
+              Leaf 6
+        ''')
+    lexemes = Lexer(s).parse()
+    ast = parse_arithmetics_low(Parser(lexemes))
+    assert ast.show() == expected, ast.show()
+
+
+def test_unary():
+    s = '-x * +5 - 3'
+    expected = dedent('''\
+        Binary -
+          Binary *
+            Unary -
+              Leaf x
+            Unary +
+              Leaf 5
+          Leaf 3
+        ''')
+    lexemes = Lexer(s).parse()
+    ast = parse_arithmetics_low(Parser(lexemes))
+    assert ast.show() == expected, '\n' + ast.show()
 
 
 def test_smoke():

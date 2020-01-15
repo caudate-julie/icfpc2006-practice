@@ -18,3 +18,4 @@ def level(op):
 brackets = '(){}[]'
 whitespaces = ' \n\t\r'
 
+closing = { '(' : ')', '{' : '}', '[' : ']'}

@@ -5,6 +5,9 @@ from dataclasses import dataclass
 from typing import Any, Optional, List
 
 
+def default_printer(ast): return ''
+
+
 @dataclass
 class ASTNode:
     lexeme: Lexeme
@@ -22,25 +25,33 @@ class ASTNode:
         end = max(lex.ends, *(x.ends for x in children))
         return (start, end)
 
+    def show(self, printer=default_printer, depth=0):
+        raise NotImplementedError()
+
 
 @dataclass
 class ASTLeaf(ASTNode):
     # no additional fields
 
-    @classmethod
-    def from_lexeme(self, lex: Lexeme):
+    @staticmethod
+    def create(lex: Lexeme):
         return ASTLeaf(lexeme=lex, starts=lex.starts, ends=lex.ends)
 
     def unparse(self):
+        # TODO: distinguish string literal from everything else
         return str(self.value)
+
+    def show(self, printer=default_printer, depth=0):
+        offset = ' ' * (depth * 2)
+        return offset + f'Leaf {self.value}' + printer(self) + '\n'
 
 
 @dataclass
 class ASTUnary(ASTNode):
     child: ASTNode = None
 
-    @classmethod
-    def from_lexeme(cls, lex: Lexeme, child):
+    @staticmethod
+    def create(lex: Lexeme, child):
         starts, ends = ASTNode.get_bounds(lex, child)
         return ASTUnary(lexeme=lex, starts=starts, ends=ends, child=child)
 
@@ -50,14 +61,19 @@ class ASTUnary(ASTNode):
             child_exp = '(' + child_exp + ')'
         return self.value + ' ' + child_exp  
 
+    def show(self, printer=default_printer, depth=0):
+        offset = ' ' * (depth * 2)
+        return offset + f'Unary {self.value}' + printer(self) + '\n' \
+             + self.child.show(printer, depth + 1)
+
 
 @dataclass
 class ASTBinary(ASTNode):
     left: ASTNode
     right: ASTNode
 
-    @classmethod
-    def from_lexeme(cls, lex: Lexeme, left, right):
+    @staticmethod
+    def create(lex: Lexeme, left, right):
         start, end = ASTNode.get_bounds(lex, left, right)
         return ASTBinary(lexeme=lex, starts=start, ends=end, left=left, right=right)
 
@@ -72,16 +88,26 @@ class ASTBinary(ASTNode):
             right_exp = '(' + right_exp + ')'
         return left_exp + ' ' + self.value + ' ' + right_exp
 
+    def show(self, printer=default_printer, depth=0):
+        offset = ' ' * (depth * 2)
+        return offset + f'Binary {self.value}' + printer(self) + '\n' \
+             + self.left.show(printer, depth + 1) + self.right.show(printer, depth + 1)
+
 
 @dataclass
 class ASTBlock(ASTNode):
     expressions: List[ASTNode]
     terminated: bool
 
-    # @classmethod
-    # def from_lexeme(cls, lex: Lexeme, ....):
+    # @staticmethod
+    # def create(lex: Lexeme, ....):
     #     start, end = ASTNode.get_bounds(lex, ...)
     #     return AST...(lexeme=lex, starts=start, ends=end, ....)
+
+    def show(self, printer=default_printer, depth=0):
+        offset = ' ' * (depth * 2)
+        return offset + 'Block' + printer() + '\n' \
+             + ''.join(x.show(printer, depth + 1) for x in self.expressions)
 
 
 @dataclass
@@ -90,10 +116,16 @@ class ASTConditional(ASTNode):
     true_block: ASTBlock
     false_block: ASTBlock
 
-    # @classmethod
-    # def from_lexeme(cls, lex: Lexeme, ....):
+    # @staticmethod
+    # def create(lex: Lexeme, ....):
     #     start, end = ASTNode.get_bounds(lex, ...)
     #     return AST...(lexeme=lex, starts=start, ends=end, ....)
+
+    def show(self, depth=0):
+        offset = ' ' * (depth * 2)
+        return offset + 'if' + printer(self) + '\n' + self.condition.show(printer, depth + 1) \
+             + offset + 'then\n' + self.true_block.show(printer, depth + 1) \
+             + offset + 'else\n' + self.false_block.show(printer, depth + 1)
 
 
 @dataclass
@@ -101,20 +133,32 @@ class ASTCall(ASTNode):
     called: ASTNode
     arguments: List[ASTNode]
 
-    # @classmethod
-    # def from_lexeme(cls, lex: Lexeme, ....):
+    # @staticmethod
+    # def create(lex: Lexeme, ....):
     #     start, end = ASTNode.get_bounds(lex, ...)
     #     return AST...(lexeme=lex, starts=start, ends=end, ....)
+
+    def show(self, depth=0):
+        offset = ' ' * (depth * 2)
+        return offset + 'Call ' + self.value + closing(self.value) + printer(self) + '\n' \
+               + self.called.show(printer, depth + 1) \
+               + ''.join(x.show(printer, depth + 1) for x in self.arguments) \
 
 
 @dataclass
 class ASTField(ASTNode):
     obj: ASTNode
 
-    # @classmethod
-    # def from_lexeme(cls, lex: Lexeme, ....):
+    # @staticmethod
+    # def create(lex: Lexeme, ....):
     #     start, end = ASTNode.get_bounds(lex, ...)
     #     return AST...(lexeme=lex, starts=start, ends=end, ....)
+
+    def show(self, depth=0):
+        offset = ' ' * (depth * 2)
+        return offset + 'Field access' + printer(self) + '\n' \
+             + obj.show(printer, depth + 1) \
+             + offset + f'.{self.value}\n'
 
 # --------------------------------------------- #
 
@@ -129,7 +173,6 @@ class Parser:
     def __init__(self, lexemes):
         self.lexemes = lexemes
         self.index = 0
-        # self.ast = None 
 
     def peek(self):
         # assert self.index < len(self.lexemes)
@@ -140,14 +183,6 @@ class Parser:
         self.index += 1
         return self.lexemes[self.index - 1]
     
-    # def is_current_level_operator(self, level):
-    #     return self.peek().type == LexemeType.OPERATOR \
-    #         and self.peek().value in operator_levels[level]
-    
-    # ----------------------------------------- #
-    # Parse!
-    # ----------------------------------------- #
-
     def parse(self):
         return parse_assignment(self)
     
@@ -155,17 +190,23 @@ class Parser:
 # Parsers for separate levels.
 # ----------------------------------------- #
 
-
+# General binary parser
 def parse_binary(parser, operators, next_level):
     ast = next_level(parser)
     while parser.peek().type is LexemeType.OPERATOR and parser.peek().value in operators:
         ast_left = ast
         lex = parser.take()
         ast_right = next_level(parser)
-        ast = ASTBinary.from_lexeme(lex, ast_left, ast_right)
+        ast = ASTBinary.create(lex, ast_left, ast_right)
     
     return ast
-    # exception if no operand for operator    
+    # exception if no operand for operator
+
+# def parse_block(parser):
+#     left = parser.take()
+#     if left.type != LexemeType.BRACKET or left.value != '{':
+#         raise ParserError('Block without opening bracket', left.starts)
+
 
 def parse_assignment(parser):
     return parse_binary(parser, ['='], parse_arithmetics_low)
@@ -174,12 +215,27 @@ def parse_arithmetics_low(parser):
     return parse_binary(parser, ['+', '-'], parse_arithmetics_high)
 
 def parse_arithmetics_high(parser):
-    return parse_binary(parser, ['*', '/'], parse_atom)
+    return parse_binary(parser, ['*', '/'], parse_unary)
 
+def parse_unary(parser):
+    operators = ['+', '-']
+    lex = parser.peek()
+    if lex.type == LexemeType.OPERATOR and lex.value in operators:
+        parser.take()
+    else:
+        lex = None
+    
+    ast = parse_atom(parser)
+    if lex is not None:
+        ast = ASTUnary.create(lex, ast)
+    return ast
 
 # TERM = <numeral> | <identifier> | (SUMMATION)
 def parse_atom(parser):
     lex = parser.take()
+    if lex.type == LexemeType.EOF:
+        raise ParserError('Unexpected EOF reached')
+
     if lex.type == LexemeType.BRACKET:
         if lex.value != '(':
             raise NotImplementedError()
@@ -190,46 +246,7 @@ def parse_atom(parser):
             raise ParserError('closing bracket not found', parser.index)
         return leaf
 
-    return ASTLeaf.from_lexeme(lex)
-
-
-
-
-    # def parse_binary(self, level):
-    #     if level == len(operator_levels):
-    #         return self.parse_atom()
-
-    #     ast = self.parse_binary(level + 1)
-
-    #     while self.peek().value in operator_levels[level]:
-    #         ast_left = ast
-    #         node = self.take()
-    #         ast_right = self.parse_binary(level + 1)
-    #         ast = ASTBinary.from_lexeme(node)
-    #         ast.left = ast_left
-    #         ast.right = ast_right  # !!! TODO
-        
-    #     return ast
-    # exception - no operand for binary operator
-
-
-    # # TERM = <numeral> | <identifier> | (SUMMATION)
-    # def parse_atom(self):
-    #     assert self.index < len(self.lexemes)
-
-    #     lex = self.take()
-    #     if lex.type == LexemeType.BRACKET:
-    #         if lex.value != '(':
-    #             raise NotImplementedError()
-
-    #         leaf = self.parse_binary(0)
-    #         lex = self.take()
-    #         if lex.type != LexemeType.BRACKET or lex.value != ')':
-    #             raise ParserError('closing bracket not found', self.index)
-    #         return leaf
-
-    #     return ASTLeaf.from_lexeme(lex)
-
+    return ASTLeaf.create(lex)
 
 
 if __name__ == '__main__':
@@ -238,4 +255,5 @@ if __name__ == '__main__':
     print(lexemes)
     ast = Parser(lexemes).parse()
     print(ast)
+    print(ast.show())
     print(ast.unparse())
