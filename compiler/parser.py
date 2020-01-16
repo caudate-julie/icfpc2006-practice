@@ -9,21 +9,10 @@ def default_printer(ast): return ''
 
 @dataclass
 class ASTNode:
-    lexeme: Lexeme
     # level: int
     starts: int
     ends: int
     
-    @property
-    def value(self):
-        return self.lexeme.value
-
-    @staticmethod
-    def get_bounds(lex: Lexeme, *children):
-        start = min(lex.starts, *(x.starts for x in children))
-        end = max(lex.ends, *(x.ends for x in children))
-        return (start, end)
-
     def show(self, printer=default_printer, depth=0):
         raise NotImplementedError()
 
@@ -34,7 +23,15 @@ class ASTLeaf(ASTNode):
 
     @staticmethod
     def create(lex: Lexeme):
-        return ASTLeaf(lexeme=lex, starts=lex.starts, ends=lex.ends)
+        if lex.type == LexemeType.INTEGER_NUMERAL:
+            return ASTIntNumeral.create(lex)
+        if lex.type == LexemeType.FLOAT_NUMERAL:
+            return ASTFloatNumeral.create(lex)
+        # if lex.type == LexemeType.BOOL_NUMERAL:
+        #     return ASTBoolNumeral.create(lex)
+        if lex.type == LexemeType.IDENTIFIER:
+            return ASTIdentifier.create(lex)
+        assert False, lex.type
 
     def unparse(self):
         # TODO: distinguish string literal from everything else
@@ -46,13 +43,52 @@ class ASTLeaf(ASTNode):
 
 
 @dataclass
+class ASTIntNumeral(ASTLeaf):
+    value: int
+
+    @staticmethod
+    def create(lex: Lexeme):
+        assert lex.type == LexemeType.INTEGER_NUMERAL
+        return ASTIntNumeral(value=lex.value, starts=lex.starts, ends=lex.ends)
+
+@dataclass
+class ASTFloatNumeral(ASTLeaf):
+    value: float
+
+    @staticmethod
+    def create(lex: Lexeme):
+        assert lex.type == LexemeType.FLOAT_NUMERAL
+        return ASTFloatNumeral(value=lex.value, starts=lex.starts, ends=lex.ends)
+
+@dataclass
+class ASTBoolNumeral(ASTLeaf):
+    value: bool
+
+    @staticmethod
+    def create(lex: Lexeme):
+        assert lex.type == LexemeType.BOOL_NUMERAL
+        return ASTBoolNumeral(value=lex.value, starts=lex.starts, ends=lex.ends)
+
+@dataclass
+class ASTIdentifier(ASTLeaf):
+    value: str
+
+    @staticmethod
+    def create(lex: Lexeme):
+        assert lex.type == LexemeType.IDENTIFIER
+        return ASTIdentifier(value=lex.value, starts=lex.starts, ends=lex.ends)
+
+
+@dataclass
 class ASTUnary(ASTNode):
+    value: str
     child: ASTNode = None
 
     @staticmethod
     def create(lex: Lexeme, child):
-        starts, ends = ASTNode.get_bounds(lex, child)
-        return ASTUnary(lexeme=lex, starts=starts, ends=ends, child=child)
+        starts = min(lex.starts, child.starts)
+        ends = min(lex.ends, child.ends)
+        return ASTUnary(value=lex.value, starts=starts, ends=ends, child=child)
 
     def unparse(self):
         child_exp = self.child.unparse()
@@ -68,13 +104,13 @@ class ASTUnary(ASTNode):
 
 @dataclass
 class ASTBinary(ASTNode):
+    value: str
     left: ASTNode
     right: ASTNode
 
     @staticmethod
     def create(lex: Lexeme, left, right):
-        start, end = ASTNode.get_bounds(lex, left, right)
-        return ASTBinary(lexeme=lex, starts=start, ends=end, left=left, right=right)
+        return ASTBinary(value=lex.value, starts=left.starts, ends=right.ends, left=left, right=right)
 
     def unparse(self):
         left_exp = self.left.unparse()
@@ -102,6 +138,13 @@ class ASTBlock(ASTNode):
     # def create(lex: Lexeme, ....):
     #     start, end = ASTNode.get_bounds(lex, ...)
     #     return AST...(lexeme=lex, starts=start, ends=end, ....)
+
+    # @staticmethod
+    # def get_bounds(lex: Lexeme, *children):
+    #     start = min(lex.starts, *(x.starts for x in children))
+    #     end = max(lex.ends, *(x.ends for x in children))
+    #     return (start, end)
+
 
     def show(self, printer=default_printer, depth=0):
         offset = ' ' * (depth * 2)
@@ -147,6 +190,7 @@ class ASTCall(ASTNode):
 @dataclass
 class ASTField(ASTNode):
     obj: ASTNode
+    identifier: str
 
     # @staticmethod
     # def create(lex: Lexeme, ....):
