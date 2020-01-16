@@ -43,12 +43,29 @@ def test_smoke():
     ast = Parser(lexemes).parse()
     assert ast.value == '='
 
+def test_parser_errors():
+    testcases = ['y = 6 *',
+                 'z = 6 + * 7',
+                 '3 = / 2',
+                 ' 6 = = 3',
+                 '+'
+                #  'a += b += c',
+                #  'a.(a + 2)',
+                #  'a.123'
+                ]
 
-@pytest.mark.xfail(reason='Waiting for todo-ed start and end recomputation')
+    for s in testcases:
+        lexemes = Lexer(s).parse()
+        with pytest.raises(ParserError):
+            ast = Parser(lexemes).parse()
+
+
+@pytest.mark.xfail(reason='Bracket problem')
 def test_starts_ends():
     s = 'y = (26 + 5) * x'
+    ender = (lambda x: str((x.starts, x.ends)))
     ast = Parser(Lexer(s).parse()).parse()
     assert ast.starts == 0
     assert ast.ends == len(s)
-    assert ast.right.starts == 4
+    assert ast.right.starts == 4, ast.show(ender)
     assert ast.right.ends == len(s)

@@ -4,7 +4,6 @@ from .grammar import *
 from dataclasses import dataclass
 from typing import Any, Optional, List
 
-
 def default_printer(ast): return ''
 
 
@@ -207,6 +206,14 @@ def parse_binary(parser, operators, next_level):
 #     if left.type != LexemeType.BRACKET or left.value != '{':
 #         raise ParserError('Block without opening bracket', left.starts)
 
+    # ast = next_level(parser)
+    # while parser.peek().type is LexemeType.OPERATOR and parser.peek().value in operators:
+    #     ast_left = ast
+    #     lex = parser.take()
+    #     ast_right = next_level(parser)
+    #     ast = ASTBinary.create(lex, ast_left, ast_right)
+    
+    # return ast
 
 def parse_assignment(parser):
     return parse_binary(parser, ['='], parse_arithmetics_low)
@@ -234,7 +241,7 @@ def parse_unary(parser):
 def parse_atom(parser):
     lex = parser.take()
     if lex.type == LexemeType.EOF:
-        raise ParserError('Unexpected EOF reached')
+        raise ParserError('Unexpected EOF reached', parser.index)
 
     if lex.type == LexemeType.BRACKET:
         if lex.value != '(':
@@ -243,8 +250,11 @@ def parse_atom(parser):
         leaf = parse_arithmetics_low(parser)
         lex = parser.take()
         if lex.type != LexemeType.BRACKET or lex.value != ')':
-            raise ParserError('closing bracket not found', parser.index)
+            raise ParserError('Closing bracket not found', parser.index)
         return leaf
+
+    if not lex.type.is_term():
+        raise ParserError('Unexpected type of lexeme', parser.index)
 
     return ASTLeaf.create(lex)
 
